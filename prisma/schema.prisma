@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      Role      @default(USER)
+  empresaId String
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  logs      Log[]
+
+  @@index([empresaId])
+}
+
+model Empresa {
+  id              String           @id @default(cuid())
+  nombre          String
+  nif             String           @unique
+  direccion       String?
+  logo            String?
+  users           User[]
+  clientes        Cliente[]
+  proveedores     Proveedor[]
+  facturas        Factura[]
+  obligaciones    ObligacionFiscal[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Cliente {
+  id          String    @id @default(cuid())
+  nombre      String
+  nif         String
+  direccion   String?
+  email       String?
+  telefono    String?
+  empresaId   String
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  facturas    Factura[] @relation("ClienteFacturas")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([nif, empresaId])
+  @@index([empresaId])
+}
+
+model Proveedor {
+  id          String    @id @default(cuid())
+  nombre      String
+  nif         String
+  direccion   String?
+  email       String?
+  telefono    String?
+  empresaId   String
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  facturas    Factura[] @relation("ProveedorFacturas")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([nif, empresaId])
+  @@index([empresaId])
+}
+
+model Factura {
+  id           String         @id @default(cuid())
+  numero       String?
+  tipo         TipoFactura
+  importe      Float
+  iva          Float?
+  fecha        DateTime
+  fechaPago    DateTime?
+  estado       EstadoFactura  @default(PENDIENTE)
+  pdfUrl       String?
+  driveId      String?
+  clienteId    String?
+  cliente      Cliente?       @relation("ClienteFacturas", fields: [clienteId], references: [id])
+  proveedorId  String?
+  proveedor    Proveedor?     @relation("ProveedorFacturas", fields: [proveedorId], references: [id])
+  empresaId    String
+  empresa      Empresa        @relation(fields: [empresaId], references: [id])
+  datosJson    Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@index([proveedorId])
+}
+
+model ObligacionFiscal {
+  id              String                @id @default(cuid())
+  tipo            TipoObligacion
+  fechaVencimiento DateTime
+  estado          EstadoObligacion      @default(PENDIENTE)
+  descripcion     String?
+  importe         Float?
+  empresaId       String
+  empresa         Empresa               @relation(fields: [empresaId], references: [id])
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([empresaId])
+}
+
+model Log {
+  id        String    @id @default(cuid())
+  accion    String
+  entidad   String
+  payload   Json?
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum TipoFactura {
+  EMITIDA
+  RECIBIDA
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  PROCESADA
+  ERROR
+  PAGADA
+  COBRADA
+}
+
+enum TipoObligacion {
+  IVA
+  IRPF
+  IS
+  OTROS
+}
+
+enum EstadoObligacion {
+  PENDIENTE
+  CUMPLIDA
+  RETRASADA
+} 

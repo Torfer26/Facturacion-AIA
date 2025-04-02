@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: fiscalapp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    networks:
+      - fiscalapp-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID}
+      - ENABLE_DARK_MODE=${ENABLE_DARK_MODE}
+      - ENABLE_N8N_INTEGRATION=${ENABLE_N8N_INTEGRATION}
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - AIRTABLE_TABLE_NAME=${AIRTABLE_TABLE_NAME}
+      - AIRTABLE_API_URL=${AIRTABLE_API_URL}
+      - NEXT_PUBLIC_AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - NEXT_PUBLIC_AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - NEXT_PUBLIC_AIRTABLE_TABLE_NAME=${AIRTABLE_TABLE_NAME}
+      - NEXT_PUBLIC_AIRTABLE_API_URL=${AIRTABLE_API_URL}
+
+  postgres:
+    container_name: fiscalapp-postgres
+    image: postgres:14-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-fiscalapp}
+    networks:
+      - fiscalapp-network
+
+  # n8n:
+  #   container_name: fiscalapp-n8n
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.n8n
+  #   restart: always
+  #   ports:
+  #     - "5678:5678"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - n8n-data:/home/node/.n8n
+  #   networks:
+  #     - fiscalapp-network
+
+networks:
+  fiscalapp-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  # n8n-data:

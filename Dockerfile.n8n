@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+
+# Partir de la imagen oficial de n8n
+FROM n8nio/n8n:latest
+
+# Cambiar a root para instalar paquetes y configurar permisos
+USER root
+
+# Instalar poppler-utils usando apk
+RUN apk add --no-cache poppler-utils
+
+# Crear directorios necesarios y establecer permisos
+RUN mkdir -p /home/node/.n8n/initial-workflows && \
+    chown -R node:node /home/node/.n8n && \
+    chmod 700 /home/node/.n8n
+
+# Copiar workflow al directorio de importación automática
+COPY --chown=node:node 07_Facturas_AIA.json /home/node/.n8n/initial-workflows/
+
+# Volver al usuario n8n
+USER node
+
+# Configurar variables de entorno
+ENV N8N_HOST=0.0.0.0
+ENV N8N_PORT=5678
+ENV N8N_PROTOCOL=http
+ENV N8N_USER_MANAGEMENT_DISABLED=true
+ENV N8N_DIAGNOSTICS_ENABLED=false
+ENV N8N_HIRING_BANNER_ENABLED=false
+ENV N8N_EMAIL_MODE=smtp
+ENV N8N_SMTP_HOST=smtp.gmail.com
+ENV N8N_SMTP_PORT=587
+ENV N8N_SMTP_USER=${SMTP_USER}
+ENV N8N_SMTP_PASS=${SMTP_PASS}
+ENV N8N_SMTP_SENDER=${SMTP_SENDER}
+ENV N8N_SMTP_REPLY_TO=${SMTP_REPLY_TO}
+ENV N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+
+# Exponer el puerto de n8n
+EXPOSE 5678
+
+# Comando para iniciar n8n
+ENTRYPOINT ["n8n"]
+CMD ["start"]

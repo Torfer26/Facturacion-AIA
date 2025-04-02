@@ -1,0 +1,687 @@
+{
+  "name": "07 Facturas AIA",
+  "nodes": [
+    {
+      "parameters": {
+        "jsonSchema": "{\n  \"invoice_date\": \"YYYY-MM-DD\",  \n  \"invoice_number\": \"string\",\n  \"purchase_order_number\": \"string\",\n  \"customer_name\": \"string\",\n  \"customer_vat_id\": \"string\",\n  \"customer_address\": \"string\",\n  \"total_price_excluding_vat\": \"float\",\n  \"total_price_including_vat\": \"float\"\n}\n"
+      },
+      "id": "34b00134-b53d-4488-a15f-77638e65963d",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        1980,
+        380
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "content": "## 2. Classic PDF Extractor\nEasiest option\n\n\n",
+        "height": 363,
+        "width": 786,
+        "color": 7
+      },
+      "id": "a5bc9c67-2062-4f6f-b1ba-6eef323cb2d7",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 1. Watch for Invoice Emails\n[Gmail Documentation](https://docs.n8n.io/integrations/builtin/credentials/google/oauth-single-service/#enable-apis)\n",
+        "height": 370,
+        "width": 609,
+        "color": 7
+      },
+      "id": "dca795ce-3255-4a50-9ab0-42bf1e339175",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        80,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3. Use LLMs to Structure Data\n[Airtable Documentation](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.airtable/?utm_source=n8n_app&utm_medium=node_settings_modal-credential_link&utm_campaign=n8n-nodes-base.airtable)\n",
+        "height": 517,
+        "width": 805,
+        "color": 7
+      },
+      "id": "129b8da4-a727-4943-9d45-56385bf66f13",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1540,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 4. Add Label to Avoid Duplicates\nAvoid Duplicates",
+        "height": 460,
+        "width": 322,
+        "color": 7
+      },
+      "id": "825d1217-74c7-4495-b50b-bd5958b2363b",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2380,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "ca30fce2-342d-4c31-982f-efd16da44989",
+      "name": "Map Output",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2500,
+        240
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Context:\nEres un modelo de inteligencia artificial especializado en extraer información estructurada de facturas. Se te proporcionará el texto (o resultado de OCR) de una factura. Tu tarea es identificar y devolver los siguientes campos en formato JSON:\n\n- Invoice Date\n- Invoice Number\n- Purchase Order Number\n- Customer Name\n- Customer VAT Identification Number\n- Customer Address\n- Total Price excluding VAT\n- Total Price including VAT\n\nConstraints:\n1. Si algún dato no aparece en el texto de la factura, debes establecer su valor en null.\n2. No inventes ni “alucines” información. Únicamente extrae datos que estén claramente presentes.\n3. Devuelve únicamente el JSON sin texto adicional ni explicaciones.\n4. Usa las claves tal cual se especifican (respetando mayúsculas y minúsculas). \n5. Sigue el formato de fecha más coherente con lo encontrado (por ejemplo, “YYYY-MM-DD” o “DD.MM.YYYY”). \n6. Para cantidades monetarias, usa punto como separador decimal (ej. 123.45). \n7. Si el texto puede llevar a varias interpretaciones, elige la más probable en base al contexto.\n\nTask:\nAnaliza el siguiente contenido de la factura y retorna un JSON con los campos descritos:\n\n<invoice>{{ $json.text }}</invoice>\n\nOutput Format (ejemplo de respuesta):\n{\n  \"Invoice Date\": \"2025-01-16\",\n  \"Invoice Number\": \"X5OW0\",\n  \"Purchase Order Number\": null,\n  \"Customer Name\": \"Ferran Torres Pascual\",\n  \"Customer VAT Identification Number\": null,\n  \"Customer Address\": null,\n  \"Total Price excluding VAT\": 21.2,\n  \"Total Price including VAT\": 25.65\n}\n",
+        "hasOutputParser": true
+      },
+      "id": "11c6b756-cd02-4fba-b793-b537008f1b4c",
+      "name": "Apply Data Extraction Rules",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        1820,
+        200
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "a9348a8d-af13-4e2c-afe0-2de52b2f5410",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/pdf"
+            },
+            {
+              "id": "a92cf1a9-6ad1-4ed8-a08b-a258128b0a7b",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              },
+              "leftValue": "={{ $json.labelIds }}",
+              "rightValue": "Treated"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "61fc7653-f906-4c95-bed4-7d5ce2089527",
+      "name": "Should Process Email?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        740,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        1720,
+        380
+      ],
+      "id": "a443cb21-c2a0-45e5-b436-1cfdebed3ad5",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "el6xgUIYMvxV1cIm",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1180
+      ],
+      "id": "b511eb8f-c450-4459-9b3c-e4317575921c",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "content": "## 2.2 Trigger another workflow in case of error\nError Handler",
+        "height": 283,
+        "width": 786,
+        "color": 7
+      },
+      "id": "6dd1084b-34f6-40d3-8be0-e4ce51789681",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        1060
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2.1 Advanced PDF Processing with LlamaParse\nMore reliable",
+        "height": 543,
+        "width": 786,
+        "color": 7
+      },
+      "id": "32013f92-a575-434c-999f-4debda60b456",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/parsing/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=attachment_0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "abc4c149-7fe4-4426-a22f-2913070f3e7d",
+      "name": "Upload to LlamaParse",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        780,
+        680
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "dnPta1Ar0CmPYKpr",
+          "name": "Header git hub terraform repo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/parsing/job/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "317a0090-ec58-40bb-a1ea-e095e1b7244b",
+      "name": "Get Processing Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        980,
+        680
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "23930244-fee3-4752-bcec-a22a107a47a6",
+      "name": "Wait to stay within service limits",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1300,
+        820
+      ],
+      "webhookId": "5cfa9ca3-4957-4570-ae08-18d207d0390e",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "SUCCESS"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "SUCCESS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "ERROR"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ERROR"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "CANCELED"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "CANCELED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "PENDING"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "PENDING"
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": true
+        }
+      },
+      "id": "fb7a9309-0dbf-4447-bafe-a49fdf76f6dc",
+      "name": "Is Job Ready?",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        1140,
+        680
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/parsing/job/{{ $json.id }}/result/markdown",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "id": "072791cd-e725-4255-9585-12d971671ca6",
+      "name": "Get Parsed Invoice Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1320,
+        540
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1uoDPMwMSw4p3iGNHNtSZK_eT3P_3xhBy",
+          "mode": "list",
+          "cachedResultName": "Facturas-recibidas",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1uoDPMwMSw4p3iGNHNtSZK_eT3P_3xhBy"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "id": "8df015d5-f547-469f-a009-9fe2be383c70",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VLYO8HOgsQ1w1qNz",
+          "name": "Google Drive account ai automate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        400,
+        300
+      ],
+      "id": "1f863556-e197-42ba-97ca-ad28d5b23b87",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VLYO8HOgsQ1w1qNz",
+          "name": "Google Drive account ai automate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convierte el PDF descargado del Google Drive en Base64\n// Asumiendo que el binario se llame \"data\" y contenga el PDF\nreturn items.map(item => {\n  const fileData = item.binary.data.data; // Esto es un buffer\n  const base64Encoded = Buffer.from(fileData, 'base64').toString('base64');\n\n  return {\n    json: {\n      base64Pdf: base64Encoded,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        200
+      ],
+      "id": "bfbbb768-7255-4d48-99d4-03da35336348",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDeuLZLt8Tg73uaTZNLcM6tBJmskJn_E3A",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"requests\": [\n    {\n      \"image\": {\n        \"content\": \"{{ $json.base64Pdf }}\"\n      },\n      \"features\": [\n        {\n          \"type\": \"DOCUMENT_TEXT_DETECTION\"\n        }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        200
+      ],
+      "id": "ec2cf055-6239-405b-9142-9739fb435759",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Map Output": {
+      "main": [
+        []
+      ]
+    },
+    "Should Process Email?": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Apply Data Extraction Rules",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Data Extraction Rules": {
+      "main": [
+        [
+          {
+            "node": "Map Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Apply Data Extraction Rules",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to LlamaParse": {
+      "main": [
+        [
+          {
+            "node": "Get Processing Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Processing Status": {
+      "main": [
+        [
+          {
+            "node": "Is Job Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait to stay within service limits": {
+      "main": [
+        [
+          {
+            "node": "Get Processing Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Job Ready?": {
+      "main": [
+        [
+          {
+            "node": "Get Parsed Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [
+          {
+            "node": "Wait to stay within service limits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Should Process Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Apply Data Extraction Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dafcc6e0-1301-46de-96f8-2b76e03309ac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "08f05cc53827941a3f4a40c3669520fc0c218577e904856807937e552f0efd54"
+  },
+  "id": "dxzrPKwfoKAT8uqW",
+  "tags": []
+}
