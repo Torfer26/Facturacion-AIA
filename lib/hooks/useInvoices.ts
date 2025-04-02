@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { 
   type Factura, 
   type TipoFactura, 
   type EstadoFactura
 } from '@prisma/client';
 import { useRouter } from 'next/navigation';
+import { Invoice } from '@/lib/types';
 
 export interface UseInvoicesProps {
   initialInvoices?: Factura[];
@@ -13,7 +14,7 @@ export interface UseInvoicesProps {
 
 export default function useInvoices({ initialInvoices = [], tipo }: UseInvoicesProps = {}) {
   const [facturas, setFacturas] = useState<Factura[]>(initialInvoices);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -122,6 +123,10 @@ export default function useInvoices({ initialInvoices = [], tipo }: UseInvoicesP
   const navigateToDetail = useCallback((facturaId: string) => {
     router.push(`/facturas/${tipo?.toLowerCase() || 'todas'}/${facturaId}`);
   }, [router, tipo]);
+
+  useEffect(() => {
+    fetchFacturas();
+  }, [fetchFacturas]);
 
   return {
     facturas,

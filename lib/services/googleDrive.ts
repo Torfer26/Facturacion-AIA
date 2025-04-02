@@ -1,14 +1,14 @@
 import { google } from 'googleapis';
 
-// Configuración del cliente OAuth2
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  },
+  scopes: ['https://www.googleapis.com/auth/drive.file'],
+});
 
-// Crear cliente de Google Drive
-const drive = google.drive({ version: 'v3', auth: oauth2Client });
+const drive = google.drive({ version: 'v3', auth });
 
 export interface UploadFileParams {
   folderId: string;
@@ -99,7 +99,7 @@ export function getAuthUrl(): string {
     'https://www.googleapis.com/auth/drive.file',
   ];
 
-  return oauth2Client.generateAuthUrl({
+  return auth.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
     prompt: 'consent',
@@ -110,7 +110,7 @@ export function getAuthUrl(): string {
  * Intercambia el código de autorización por tokens de acceso y refresco
  */
 export async function getTokensFromCode(code: string) {
-  const { tokens } = await oauth2Client.getToken(code);
+  const { tokens } = await auth.getToken(code);
   return tokens;
 }
 
@@ -118,8 +118,26 @@ export async function getTokensFromCode(code: string) {
  * Establece los tokens para autenticación
  */
 export function setTokens(accessToken: string, refreshToken?: string) {
-  oauth2Client.setCredentials({
+  auth.setCredentials({
     access_token: accessToken,
     refresh_token: refreshToken,
   });
+}
+
+export async function uploadInvoice(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/facturas/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Error al subir el archivo');
+  }
+
+  return data.file;
 } 

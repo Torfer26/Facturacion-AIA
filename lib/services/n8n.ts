@@ -78,4 +78,22 @@ export function validateWebhookRequest(apiKey: string): boolean {
   }
   
   return apiKey === expectedApiKey;
+}
+
+export async function processInvoice(fileId: string) {
+  const response = await fetch('/api/tasks/process-status', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fileId }),
+  })
+
+  const data = await response.json()
+
+  if (!data.success) {
+    throw new Error(data.error || 'Error al procesar la factura')
+  }
+
+  return data
 } 
