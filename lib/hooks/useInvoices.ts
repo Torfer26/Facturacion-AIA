@@ -1,140 +1,43 @@
-import { useCallback, useState, useEffect } from 'react';
-import { 
-  type Factura, 
-  type TipoFactura, 
-  type EstadoFactura
-} from '@prisma/client';
-import { useRouter } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import { Invoice } from '@/lib/types';
 
-export interface UseInvoicesProps {
-  initialInvoices?: Factura[];
-  tipo?: TipoFactura;
-}
+export function useInvoices() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-export default function useInvoices({ initialInvoices = [], tipo }: UseInvoicesProps = {}) {
-  const [facturas, setFacturas] = useState<Factura[]>(initialInvoices);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const fetchFacturas = useCallback(async (filters?: {
-    estado?: EstadoFactura;
-    fechaDesde?: Date;
-    fechaHasta?: Date;
-    busqueda?: string;
-  }) => {
-    setIsLoading(true);
-    setError(null);
-
+  const fetchInvoices = async () => {
     try {
-      // Construir la URL con los filtros
-      const queryParams = new URLSearchParams();
-      
-      if (tipo) {
-        queryParams.append('tipo', tipo);
-      }
-      
-      if (filters?.estado) {
-        queryParams.append('estado', filters.estado);
-      }
-      
-      if (filters?.fechaDesde) {
-        queryParams.append('fechaDesde', filters.fechaDesde.toISOString());
-      }
-      
-      if (filters?.fechaHasta) {
-        queryParams.append('fechaHasta', filters.fechaHasta.toISOString());
-      }
-      
-      if (filters?.busqueda) {
-        queryParams.append('busqueda', filters.busqueda);
-      }
-
-      const queryString = queryParams.toString();
-      const url = `/api/facturas${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url);
-      
+      const response = await fetch('/api/facturas');
       if (!response.ok) {
-        throw new Error('Error al cargar facturas');
+        throw new Error('Error fetching invoices');
       }
-      
       const data = await response.json();
-      setFacturas(data);
+      setInvoices(data.invoices);
     } catch (err) {
-      console.error('Error al obtener facturas:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err as Error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar las facturas',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [tipo]);
-
-  const updateFacturaEstado = useCallback(async (facturaId: string, nuevoEstado: EstadoFactura) => {
-    try {
-      const response = await fetch(`/api/facturas/${facturaId}/estado`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ estado: nuevoEstado }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar el estado de la factura');
-      }
-
-      const updatedFactura = await response.json();
-      
-      // Actualizar la lista local
-      setFacturas(prev => 
-        prev.map(f => f.id === facturaId ? updatedFactura : f)
-      );
-
-      return updatedFactura;
-    } catch (err) {
-      console.error('Error al actualizar estado:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      throw err;
-    }
-  }, []);
-
-  const deleteFactura = useCallback(async (facturaId: string) => {
-    try {
-      const response = await fetch(`/api/facturas/${facturaId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar la factura');
-      }
-
-      // Eliminar de la lista local
-      setFacturas(prev => prev.filter(f => f.id !== facturaId));
-      
-      return true;
-    } catch (err) {
-      console.error('Error al eliminar factura:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      throw err;
-    }
-  }, []);
-
-  const navigateToDetail = useCallback((facturaId: string) => {
-    router.push(`/facturas/${tipo?.toLowerCase() || 'todas'}/${facturaId}`);
-  }, [router, tipo]);
+  };
 
   useEffect(() => {
-    fetchFacturas();
-  }, [fetchFacturas]);
+    fetchInvoices();
+  }, []);
 
   return {
-    facturas,
-    isLoading,
+    invoices,
+    loading,
     error,
-    fetchFacturas,
-    updateFacturaEstado,
-    deleteFactura,
-    navigateToDetail
+    refreshInvoices: fetchInvoices,
   };
 } 

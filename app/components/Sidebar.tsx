@@ -8,12 +8,16 @@ import {
   Users,
   Calculator,
   Settings,
-  LogOut
+  LogOut,
+  FileOutput,
+  FileInput
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Facturas', href: '/facturas', icon: FileText },
+  { name: 'Facturas Recibidas', href: '/recibidas', icon: FileInput },
+  { name: 'Facturas Emitidas', href: '/emitidas', icon: FileOutput },
   { name: 'Clientes', href: '/clientes', icon: Users },
   { name: 'Fiscal', href: '/fiscal', icon: Calculator },
   { name: 'Configuración', href: '/configuracion', icon: Settings },
@@ -45,7 +49,8 @@ export default function Sidebar() {
         <nav className="mt-6 flex flex-1 flex-col">
           <ul role="list" className="space-y-1">
             {navigation.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || pathname?.startsWith(item.href)
+
               return (
                 <li key={item.name}>
                   <Link

@@ -1,10 +1,25 @@
 import { Invoice } from '@/lib/types'
 
+// Helper function to normalize dates that might have incorrect years
+function normalizeDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    // If the date is in the future and beyond 1 year from now, adjust it to current year
+    if (date.getFullYear() > new Date().getFullYear() + 1) {
+      date.setFullYear(new Date().getFullYear()); // Set to current year
+      return date.toISOString();
+    }
+    return dateString;
+  } catch (e) {
+    console.error('Error normalizing date:', e);
+    return dateString;
+  }
+}
+
 // Verificar que todas las variables de entorno necesarias estén definidas
 const requiredEnvVars = {
   AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
   AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
-  AIRTABLE_TABLE_NAME: process.env.AIRTABLE_TABLE_NAME,
   AIRTABLE_API_URL: process.env.AIRTABLE_API_URL || 'https://api.airtable.com/v0'
 }
 
@@ -18,20 +33,18 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
 
 const AIRTABLE_API_KEY = requiredEnvVars.AIRTABLE_API_KEY
 const AIRTABLE_BASE_ID = requiredEnvVars.AIRTABLE_BASE_ID
-const AIRTABLE_TABLE_NAME = requiredEnvVars.AIRTABLE_TABLE_NAME
 const AIRTABLE_API_URL = requiredEnvVars.AIRTABLE_API_URL
 
 export async function getInvoices(): Promise<Invoice[]> {
   try {
     console.log('Airtable Service: Starting request with config:', {
       baseId: AIRTABLE_BASE_ID,
-      tableName: AIRTABLE_TABLE_NAME,
       apiUrl: AIRTABLE_API_URL,
       hasApiKey: !!AIRTABLE_API_KEY,
       envVars: process.env
     })
 
-    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`
+    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}`
     console.log('Airtable Service: Request URL:', url)
 
     const headers = {
@@ -84,7 +97,7 @@ export async function getInvoices(): Promise<Invoice[]> {
 
         const invoice: Invoice = {
           id: record.id,
-          invoiceDate: record.fields.InvoiceDate || '',
+          invoiceDate: normalizeDate(record.fields.InvoiceDate || ''),
           invoiceNumber: record.fields.InvoiceNumber?.toString() || '',
           customerName: record.fields['Customer Name'] || '',
           supplierVatNumber: record.fields['Supplier VAT Identification Number'] || '',
@@ -97,8 +110,8 @@ export async function getInvoices(): Promise<Invoice[]> {
           invoiceDescription: record.fields['Invoice description'] || '',
           internalId: record.fields['InternalID'] || null,
           driveUrl: record.fields['URL Google Drive'] || '',
-          createdAt: new Date(record.createdTime),
-          updatedAt: new Date(record.createdTime)
+          createdAt: normalizeDate(record.createdTime),
+          updatedAt: normalizeDate(record.createdTime)
         }
 
         console.log('Airtable Service: Successfully processed record:', {

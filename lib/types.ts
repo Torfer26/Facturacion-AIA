@@ -13,8 +13,8 @@ export interface Invoice {
   invoiceDescription: string
   internalId: string | null
   driveUrl: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   paid?: boolean
 }
 

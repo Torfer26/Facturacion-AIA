@@ -10,6 +10,12 @@ const auth = new google.auth.GoogleAuth({
 
 const drive = google.drive({ version: 'v3', auth });
 
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
+
 export interface UploadFileParams {
   folderId: string;
   fileName: string;
@@ -99,7 +105,7 @@ export function getAuthUrl(): string {
     'https://www.googleapis.com/auth/drive.file',
   ];
 
-  return auth.generateAuthUrl({
+  return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
     prompt: 'consent',
@@ -110,7 +116,7 @@ export function getAuthUrl(): string {
  * Intercambia el código de autorización por tokens de acceso y refresco
  */
 export async function getTokensFromCode(code: string) {
-  const { tokens } = await auth.getToken(code);
+  const { tokens } = await oauth2Client.getToken(code);
   return tokens;
 }
 
@@ -118,11 +124,13 @@ export async function getTokensFromCode(code: string) {
  * Establece los tokens para autenticación
  */
 export function setTokens(accessToken: string, refreshToken?: string) {
-  auth.setCredentials({
+  oauth2Client.setCredentials({
     access_token: accessToken,
     refresh_token: refreshToken,
   });
 }
+
+
 
 export async function uploadInvoice(file: File) {
   const formData = new FormData();

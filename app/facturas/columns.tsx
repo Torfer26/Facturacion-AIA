@@ -35,8 +35,20 @@ export const columns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue('invoiceDate'))
-      return date.toLocaleDateString('es-ES')
+      const dateValue = row.getValue('invoiceDate');
+      try {
+        const date = new Date(dateValue as string);
+        // Check if the date is far in the future and normalize it
+        if (date.getFullYear() > new Date().getFullYear() + 1) {
+          const normalizedDate = new Date(date);
+          normalizedDate.setFullYear(new Date().getFullYear());
+          return normalizedDate.toLocaleDateString('es-ES');
+        }
+        return date.toLocaleDateString('es-ES');
+      } catch (e) {
+        console.error('Error formatting date:', e);
+        return String(dateValue);
+      }
     },
   },
   {

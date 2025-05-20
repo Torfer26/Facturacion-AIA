@@ -42,8 +42,9 @@ GOOGLE_PRIVATE_KEY=your_private_key
 # Airtable
 AIRTABLE_API_KEY=your_api_key
 AIRTABLE_BASE_ID=your_base_id
-AIRTABLE_TABLE_NAME=your_table_name
 AIRTABLE_API_URL=https://api.airtable.com/v0
+AIRTABLE_TABLE_NAME_RECIBIDAS=Facturas-recibidas
+AIRTABLE_TABLE_NAME_EMITIDAS=Facturas-emitidas
 ```
 
 ## Instalación
