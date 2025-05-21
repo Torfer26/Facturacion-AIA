@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { IssuedInvoice } from '@/lib/types/issuedInvoice'
 
+interface ApiResponse {
+  success: boolean;
+  invoices: IssuedInvoice[];
+  error?: string;
+}
+
 export default function FacturasEmitidasPage() {
   const [facturas, setFacturas] = useState<IssuedInvoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -14,9 +20,9 @@ export default function FacturasEmitidasPage() {
     const fetchFacturas = async () => {
       try {
         const res = await fetch("/api/facturas/emitidas")
-        const data = await res.json()
+        const data: ApiResponse = await res.json()
         if (!data.success) throw new Error(data.error || "Error al cargar facturas")
-        setFacturas(data.facturas)
+        setFacturas(data.invoices)
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message)
@@ -44,10 +50,10 @@ export default function FacturasEmitidasPage() {
         {facturas.map((factura) => (
           <Card key={factura.id} className="p-4 flex flex-col gap-2">
             <div><b>ID:</b> {factura.facturaID}</div>
-            <div><b>Cliente:</b> {factura.nombrecliente}</div>
-            <div><b>Fecha:</b> {factura.creationDate}</div>
-            <div><b>Vencimiento:</b> {factura.fechavencimiento}</div>
-            <div><b>Producto:</b> {factura.productofactura.map(item => item.descripcion).join(', ')}</div>
+            <div><b>Cliente:</b> {factura.Nombrecliente}</div>
+            <div><b>Fecha:</b> {factura.CreationDate}</div>
+            <div><b>Vencimiento:</b> {factura.Fechavencimiento}</div>
+            <div><b>Producto:</b> {factura.Productofactura}</div>
             <div><b>Total:</b> {factura.total} €</div>
             <div><b>Estado:</b> <EstadoFacturaSelect id={factura.id} estado={factura.estadofactura} /></div>
           </Card>

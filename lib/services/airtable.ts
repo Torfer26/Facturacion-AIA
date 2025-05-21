@@ -34,6 +34,7 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
 const AIRTABLE_API_KEY = requiredEnvVars.AIRTABLE_API_KEY
 const AIRTABLE_BASE_ID = requiredEnvVars.AIRTABLE_BASE_ID
 const AIRTABLE_API_URL = requiredEnvVars.AIRTABLE_API_URL
+const AIRTABLE_TABLE_NAME_RECIBIDAS = process.env.AIRTABLE_TABLE_NAME_RECIBIDAS;
 
 export async function getInvoices(): Promise<Invoice[]> {
   try {
@@ -44,7 +45,7 @@ export async function getInvoices(): Promise<Invoice[]> {
       envVars: process.env
     })
 
-    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}`
+    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_RECIBIDAS}`
     console.log('Airtable Service: Request URL:', url)
 
     const headers = {

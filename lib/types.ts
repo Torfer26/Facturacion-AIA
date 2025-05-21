@@ -25,4 +25,21 @@ export interface WebhookResponse {
   status?: 'processed' | 'error'
   data?: any
   extractedData?: any
+}
+
+export interface CreateIssuedInvoiceDTO {
+  id: string;
+  facturaID: string;
+  creationDate: string;
+  fechavencimiento: string;
+  nombrecliente: string;
+  CIFcliente: string;
+  direccioncliente: string;
+  subtotal: number;
+  total: number;
+  tipoiva: number;
+  productofactura?: Array<{ descripcion: string; cantidad: number; precioUnitario: number; }>; // Assuming productofactura is an array of objects
+  catidadproducto: number;
+  estadofactura: string;
+  datosbancarios: string;
 } 

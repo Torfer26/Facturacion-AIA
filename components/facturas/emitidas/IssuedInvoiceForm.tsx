@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Trash2, Plus } from 'lucide-react';
-import { CreateIssuedInvoiceDTO } from '@/lib/types/issuedInvoice';
+import { CreateIssuedInvoiceDTO } from '@/lib/types';
 import { useIssuedInvoices } from '@/lib/hooks/useIssuedInvoices';
 
 export function IssuedInvoiceForm() {
@@ -23,7 +23,7 @@ export function IssuedInvoiceForm() {
     nombrecliente: '',
     CIFcliente: '',
     direccioncliente: '',
-    productofactura: [{ descripcion: '', cantidad: 1, precio: 0 }],
+    productofactura: [{ descripcion: '', cantidad: 1, precioUnitario: 0 }],
     catidadproducto: 0,
     subtotal: 0,
     tipoiva: 21,
@@ -34,7 +34,7 @@ export function IssuedInvoiceForm() {
 
   const calculateTotals = (products: typeof formData.productofactura) => {
     const subtotal = products.reduce((acc, product) => {
-      return acc + (product.cantidad * product.precio);
+      return acc + (product.cantidad * product.precioUnitario);
     }, 0);
     const total = subtotal * (1 + formData.tipoiva / 100);
     return { subtotal, total };
@@ -61,7 +61,7 @@ export function IssuedInvoiceForm() {
   const addProduct = () => {
     setFormData(prev => ({
       ...prev,
-      productofactura: [...prev.productofactura, { descripcion: '', cantidad: 1, precio: 0 }],
+      productofactura: [...prev.productofactura, { descripcion: '', cantidad: 1, precioUnitario: 0 }],
     }));
   };
 
@@ -173,13 +173,13 @@ export function IssuedInvoiceForm() {
                 />
               </div>
               <div className="col-span-3 space-y-2">
-                <Label htmlFor={`precio-${index}`}>Precio Unitario</Label>
+                <Label htmlFor={`precioUnitario-${index}`}>Precio Unitario</Label>
                 <Input
-                  id={`precio-${index}`}
+                  id={`precioUnitario-${index}`}
                   type="number"
                   step="0.01"
                   min="0"
-                  value={product.precio}
+                  value={product.precioUnitario}
                   onChange={(e) => handleProductChange(index, 'precio', e.target.value)}
                   required
                 />

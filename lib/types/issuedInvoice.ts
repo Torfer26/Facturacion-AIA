@@ -1,23 +1,20 @@
 export interface IssuedInvoice {
   id: string;
   facturaID: string;
-  creationDate: string;
-  fechavencimiento: string;
-  nombrecliente: string;
+  CreationDate: string;
+  Fechavencimiento: string;
+  Nombrecliente: string;
   CIFcliente: string;
   direccioncliente: string;
-  productofactura: {
-    descripcion: string;
-    cantidad: number;
-    precio: number;
-  }[];
-  catidadproducto: number;
+  Productofactura: string;
+  cantidadproducto: number; // ⚠️ typo heredado de Airtable
   subtotal: number;
   tipoiva: number;
   total: number;
   estadofactura: 'registrada' | 'pdfgenerado' | 'enviada' | 'cobrada';
   datosbancarios: string;
 }
+
 
 export type IssuedInvoiceStatus = 'registrada' | 'pdfgenerado' | 'enviada' | 'cobrada';
 
