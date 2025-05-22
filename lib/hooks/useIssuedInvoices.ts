@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { IssuedInvoice, CreateIssuedInvoiceDTO } from '../types/issuedInvoice';
 import { getIssuedInvoices, createIssuedInvoice, updateIssuedInvoice, deleteIssuedInvoice } from '../services/issuedInvoices';
 import { useToast } from '@/components/ui/use-toast';
+import { getToken } from '../auth';
 
 export function useIssuedInvoices() {
   const [invoices, setInvoices] = useState<IssuedInvoice[]>([]);
@@ -13,20 +14,35 @@ export function useIssuedInvoices() {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('/api/facturas/emitidas');
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('/api/facturas/emitidas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         throw new Error('Error fetching issued invoices');
       }
+      
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch issued invoices');
       }
-      setInvoices(data.invoices);
+      
+      setInvoices(data.invoices || []);
     } catch (err) {
+      console.error('Error fetching invoices:', err);
       setError(err as Error);
       toast({
-        title: 'Error',
-        description: 'No se pudieron cargar las facturas emitidas',
+        title: 'Error al cargar las facturas',
+        description: err instanceof Error ? err.message : 'Error desconocido',
         variant: 'destructive',
       });
     } finally {
@@ -36,10 +52,16 @@ export function useIssuedInvoices() {
 
   const createInvoice = async (invoice: any) => {
     try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch('/api/facturas/emitidas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(invoice),
       });
@@ -61,14 +83,39 @@ export function useIssuedInvoices() {
   const updateInvoice = async (id: string, invoice: Partial<IssuedInvoice>) => {
     try {
       setLoading(true);
-      const updatedInvoice = await updateIssuedInvoice(id, invoice);
+      
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/facturas/emitidas/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(invoice),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error updating invoice');
+      }
+      
+      const data = await response.json();
+      const updatedInvoice = data.invoice;
+      
       setInvoices(prev => prev.map(inv => inv.id === id ? updatedInvoice : inv));
+      
       toast({
         title: 'Éxito',
         description: 'Factura actualizada correctamente',
       });
+      
       return updatedInvoice;
     } catch (err) {
+      console.error('Error updating invoice:', err);
       toast({
         title: 'Error',
         description: 'No se pudo actualizar la factura',
@@ -83,13 +130,32 @@ export function useIssuedInvoices() {
   const deleteInvoice = async (id: string) => {
     try {
       setLoading(true);
-      await deleteIssuedInvoice(id);
+      
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/facturas/emitidas/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error deleting invoice');
+      }
+      
       setInvoices(prev => prev.filter(inv => inv.id !== id));
+      
       toast({
         title: 'Éxito',
         description: 'Factura eliminada correctamente',
       });
     } catch (err) {
+      console.error('Error deleting invoice:', err);
       toast({
         title: 'Error',
         description: 'No se pudo eliminar la factura',
