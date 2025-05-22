@@ -41,7 +41,7 @@ export async function GET(
       creationDate: record.get('CreationDate') as string,
       fechavencimiento: record.get('Fechavencimiento') as string,
       nombrecliente: record.get('Nombrecliente') as string,
-      CIFcliente: record.get('CIFcliente') as string,
+      cifcliente: record.get('CIFcliente') as string,
       direccioncliente: record.get('direccioncliente') as string,
       productofactura: (() => {
         const rawValue = record.get('Productofactura');
@@ -103,7 +103,7 @@ export async function PUT(
           CreationDate: data.creationDate,
           Fechavencimiento: data.fechavencimiento,
           Nombrecliente: data.nombrecliente,
-          CIFcliente: data.CIFcliente,
+          CIFcliente: data.cifcliente,
           direccioncliente: data.direccioncliente,
           Productofactura: data.productofactura ? JSON.stringify(data.productofactura) : undefined,
           cantidadproducto: data.cantidadproducto,
@@ -123,7 +123,7 @@ export async function PUT(
       creationDate: updatedRecord.get('CreationDate') as string,
       fechavencimiento: updatedRecord.get('Fechavencimiento') as string,
       nombrecliente: updatedRecord.get('Nombrecliente') as string,
-      CIFcliente: updatedRecord.get('CIFcliente') as string,
+      cifcliente: updatedRecord.get('CIFcliente') as string,
       direccioncliente: updatedRecord.get('direccioncliente') as string,
       productofactura: (() => {
         const rawValue = updatedRecord.get('Productofactura');

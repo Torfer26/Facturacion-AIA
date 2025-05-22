@@ -18,12 +18,12 @@ export function IssuedInvoiceForm() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState<Omit<CreateIssuedInvoiceDTO, 'id' | 'facturaID'>>({
-    CreationDate: new Date().toISOString().split('T')[0],
-    Fechavencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    Nombrecliente: '',
-    CIFcliente: '',
+    creationDate: new Date().toISOString().split('T')[0],
+    fechavencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    nombrecliente: '',
+    cifcliente: '',
     direccioncliente: '',
-    Productofactura: JSON.stringify([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]),
+    productofactura: [{ descripcion: '', cantidad: 1, precioUnitario: 0 }],
     cantidadproducto: 0,
     subtotal: 0,
     tipoiva: 21,
@@ -33,25 +33,17 @@ export function IssuedInvoiceForm() {
   });
 
   // Helper to get and set product array safely
-  const getProducts = () => {
-    try {
-      return typeof formData.Productofactura === 'string' 
-        ? JSON.parse(formData.Productofactura) 
-        : [{ descripcion: '', cantidad: 1, precioUnitario: 0 }];
-    } catch (e) {
-      return [{ descripcion: '', cantidad: 1, precioUnitario: 0 }];
-    }
-  };
+  const getProducts = () => formData.productofactura || [];
 
   const setProducts = (products: any[]) => {
     setFormData(prev => ({
       ...prev,
-      Productofactura: JSON.stringify(products)
+      productofactura: products
     }));
   };
 
   const calculateTotals = (products: any[]) => {
-    const subtotal = products.reduce((acc, product) => {
+    const subtotal = products.reduce((acc: number, product: any) => {
       return acc + (product.cantidad * product.precioUnitario);
     }, 0);
     const total = subtotal * (1 + formData.tipoiva / 100);
@@ -59,7 +51,7 @@ export function IssuedInvoiceForm() {
   };
 
   const handleProductChange = (index: number, field: string, value: string | number) => {
-    const products = getProducts();
+    const products = [...getProducts()];
     products[index] = {
       ...products[index],
       [field]: field === 'descripcion' ? value : Number(value),
@@ -69,34 +61,32 @@ export function IssuedInvoiceForm() {
 
     setFormData(prev => ({
       ...prev,
-      Productofactura: JSON.stringify(products),
+      productofactura: products,
       subtotal,
       total,
-      cantidadproducto: products.reduce((acc, product) => acc + product.cantidad, 0),
+      cantidadproducto: products.reduce((acc: number, product: any) => acc + product.cantidad, 0),
     }));
   };
 
   const addProduct = () => {
-    const products = getProducts();
+    const products = [...getProducts()];
     products.push({ descripcion: '', cantidad: 1, precioUnitario: 0 });
-    
     setFormData(prev => ({
       ...prev,
-      Productofactura: JSON.stringify(products),
+      productofactura: products,
     }));
   };
 
   const removeProduct = (index: number) => {
-    const products = getProducts();
-    const newProducts = products.filter((_, i) => i !== index);
-    const { subtotal, total } = calculateTotals(newProducts);
+    const products = getProducts().filter((_: any, i: number) => i !== index);
+    const { subtotal, total } = calculateTotals(products);
 
     setFormData(prev => ({
       ...prev,
-      Productofactura: JSON.stringify(newProducts),
+      productofactura: products,
       subtotal,
       total,
-      cantidadproducto: newProducts.reduce((acc, product) => acc + product.cantidad, 0),
+      cantidadproducto: products.reduce((acc: number, product: any) => acc + product.cantidad, 0),
     }));
   };
 
@@ -135,17 +125,17 @@ export function IssuedInvoiceForm() {
               <Label htmlFor="nombrecliente">Nombre del Cliente</Label>
               <Input
                 id="nombrecliente"
-                value={formData.Nombrecliente}
-                onChange={(e) => setFormData(prev => ({ ...prev, Nombrecliente: e.target.value }))}
+                value={formData.nombrecliente}
+                onChange={(e) => setFormData(prev => ({ ...prev, nombrecliente: e.target.value }))}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="CIFcliente">CIF/NIF</Label>
+              <Label htmlFor="cifcliente">CIF/NIF</Label>
               <Input
-                id="CIFcliente"
-                value={formData.CIFcliente}
-                onChange={(e) => setFormData(prev => ({ ...prev, CIFcliente: e.target.value }))}
+                id="cifcliente"
+                value={formData.cifcliente}
+                onChange={(e) => setFormData(prev => ({ ...prev, cifcliente: e.target.value }))}
                 required
               />
             </div>
@@ -202,7 +192,7 @@ export function IssuedInvoiceForm() {
                   step="0.01"
                   min="0"
                   value={product.precioUnitario}
-                  onChange={(e) => handleProductChange(index, 'precio', e.target.value)}
+                  onChange={(e) => handleProductChange(index, 'precioUnitario', e.target.value)}
                   required
                 />
               </div>

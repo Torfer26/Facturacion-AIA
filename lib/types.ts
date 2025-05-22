@@ -33,13 +33,13 @@ export interface CreateIssuedInvoiceDTO {
   creationDate: string;
   fechavencimiento: string;
   nombrecliente: string;
-  CIFcliente: string;
+  cifcliente: string;
   direccioncliente: string;
   subtotal: number;
   total: number;
   tipoiva: number;
-  productofactura?: Array<{ descripcion: string; cantidad: number; precioUnitario: number; }>; // Assuming productofactura is an array of objects
-  catidadproducto: number;
+  productofactura?: Array<{ descripcion: string; cantidad: number; precioUnitario: number; }>;
+  cantidadproducto: number;
   estadofactura: string;
   datosbancarios: string;
 } 

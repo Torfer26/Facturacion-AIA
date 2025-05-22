@@ -42,12 +42,12 @@ export async function GET() {
     const invoices = records.map(record => ({
       id: record.id,
       facturaID: record.get('facturaID') as string,
-      CreationDate: record.get('CreationDate') as string,
-      Fechavencimiento: record.get('Fechavencimiento') as string,
-      Nombrecliente: record.get('Nombrecliente') as string,
-      CIFcliente: record.get('CIFcliente') as string,
+      creationDate: record.get('CreationDate') as string,
+      fechavencimiento: record.get('Fechavencimiento') as string,
+      nombrecliente: record.get('Nombrecliente') as string,
+      cifcliente: record.get('CIFcliente') as string,
       direccioncliente: record.get('direccioncliente') as string,
-      Productofactura: (() => {
+      productofactura: (() => {
         const rawValue = record.get('Productofactura');
         if (!rawValue) return '';
         if (typeof rawValue === 'object') return JSON.stringify(rawValue);
@@ -71,8 +71,8 @@ export async function GET() {
       id: i.id,
       total: i.total,
       tipoTotal: typeof i.total,
-      fecha: i.CreationDate,
-      tipoFecha: typeof i.CreationDate
+      fecha: i.creationDate,
+      tipoFecha: typeof i.creationDate
     })));
     
 
@@ -103,12 +103,12 @@ export async function POST(request: Request) {
     const table = getAirtableBase();
 
     const fields = {
-      CreationDate: body.CreationDate,
-      Fechavencimiento: body.Fechavencimiento,
-      Nombrecliente: body.Nombrecliente,
-      CIFcliente: body.CIFcliente,
+      CreationDate: body.creationDate,
+      Fechavencimiento: body.fechavencimiento,
+      Nombrecliente: body.nombrecliente,
+      CIFcliente: body.cifcliente,
       direccioncliente: body.direccioncliente,
-      Productofactura: body.Productofactura,
+      Productofactura: body.productofactura,
       cantidadproducto: body.cantidadproducto,
       subtotal: body.subtotal,
       tipoiva: body.tipoiva,
@@ -146,12 +146,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       {
         id,
         fields: {
-          CreationDate: data.CreationDate,
-          Fechavencimiento: data.Fechavencimiento,
-          Nombrecliente: data.Nombrecliente,
-          CIFcliente: data.CIFcliente,
+          CreationDate: data.creationDate,
+          Fechavencimiento: data.fechavencimiento,
+          Nombrecliente: data.nombrecliente,
+          CIFcliente: data.cifcliente,
           direccioncliente: data.direccioncliente,
-          Productofactura: data.Productofactura,
+          Productofactura: data.productofactura,
           cantidadproducto: data.cantidadproducto,
           subtotal: data.subtotal,
           tipoiva: data.tipoiva,

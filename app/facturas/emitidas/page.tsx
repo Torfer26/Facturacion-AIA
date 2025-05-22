@@ -55,10 +55,10 @@ export default function FacturasEmitidasPage() {
         {invoices && invoices.map((factura) => (
           <Card key={factura.id} className="p-4 flex flex-col gap-2">
             <div><b>ID:</b> {factura.facturaID}</div>
-            <div><b>Cliente:</b> {factura.Nombrecliente}</div>
-            <div><b>Fecha:</b> {formatDate(factura.CreationDate)}</div>
-            <div><b>Vencimiento:</b> {formatDate(factura.Fechavencimiento)}</div>
-            <div><b>Producto:</b> {typeof factura.Productofactura === 'string' ? factura.Productofactura : JSON.stringify(factura.Productofactura)}</div>
+            <div><b>Cliente:</b> {factura.nombrecliente}</div>
+            <div><b>Fecha:</b> {formatDate(factura.creationDate)}</div>
+            <div><b>Vencimiento:</b> {formatDate(factura.fechavencimiento)}</div>
+            <div><b>Producto:</b> {typeof factura.productofactura === 'string' ? factura.productofactura : JSON.stringify(factura.productofactura)}</div>
             <div><b>Total:</b> {formatCurrency(factura.total)}</div>
             <div><b>Estado:</b> <EstadoFacturaSelect id={factura.id} estado={factura.estadofactura} /></div>
           </Card>
