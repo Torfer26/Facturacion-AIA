@@ -18,13 +18,13 @@ export function IssuedInvoiceForm() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState<Omit<CreateIssuedInvoiceDTO, 'id' | 'facturaID'>>({
-    creationDate: new Date().toISOString().split('T')[0],
-    fechavencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    nombrecliente: '',
+    CreationDate: new Date().toISOString().split('T')[0],
+    Fechavencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    Nombrecliente: '',
     CIFcliente: '',
     direccioncliente: '',
-    productofactura: [{ descripcion: '', cantidad: 1, precioUnitario: 0 }],
-    catidadproducto: 0,
+    Productofactura: JSON.stringify([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]),
+    cantidadproducto: 0,
     subtotal: 0,
     tipoiva: 21,
     total: 0,
@@ -32,7 +32,25 @@ export function IssuedInvoiceForm() {
     datosbancarios: '',
   });
 
-  const calculateTotals = (products: typeof formData.productofactura) => {
+  // Helper to get and set product array safely
+  const getProducts = () => {
+    try {
+      return typeof formData.Productofactura === 'string' 
+        ? JSON.parse(formData.Productofactura) 
+        : [{ descripcion: '', cantidad: 1, precioUnitario: 0 }];
+    } catch (e) {
+      return [{ descripcion: '', cantidad: 1, precioUnitario: 0 }];
+    }
+  };
+
+  const setProducts = (products: any[]) => {
+    setFormData(prev => ({
+      ...prev,
+      Productofactura: JSON.stringify(products)
+    }));
+  };
+
+  const calculateTotals = (products: any[]) => {
     const subtotal = products.reduce((acc, product) => {
       return acc + (product.cantidad * product.precioUnitario);
     }, 0);
@@ -40,41 +58,45 @@ export function IssuedInvoiceForm() {
     return { subtotal, total };
   };
 
-  const handleProductChange = (index: number, field: keyof typeof formData.productofactura[0], value: string | number) => {
-    const newProducts = [...formData.productofactura];
-    newProducts[index] = {
-      ...newProducts[index],
+  const handleProductChange = (index: number, field: string, value: string | number) => {
+    const products = getProducts();
+    products[index] = {
+      ...products[index],
       [field]: field === 'descripcion' ? value : Number(value),
     };
 
-    const { subtotal, total } = calculateTotals(newProducts);
+    const { subtotal, total } = calculateTotals(products);
 
     setFormData(prev => ({
       ...prev,
-      productofactura: newProducts,
+      Productofactura: JSON.stringify(products),
       subtotal,
       total,
-      catidadproducto: newProducts.reduce((acc, product) => acc + product.cantidad, 0),
+      cantidadproducto: products.reduce((acc, product) => acc + product.cantidad, 0),
     }));
   };
 
   const addProduct = () => {
+    const products = getProducts();
+    products.push({ descripcion: '', cantidad: 1, precioUnitario: 0 });
+    
     setFormData(prev => ({
       ...prev,
-      productofactura: [...prev.productofactura, { descripcion: '', cantidad: 1, precioUnitario: 0 }],
+      Productofactura: JSON.stringify(products),
     }));
   };
 
   const removeProduct = (index: number) => {
-    const newProducts = formData.productofactura.filter((_, i) => i !== index);
+    const products = getProducts();
+    const newProducts = products.filter((_, i) => i !== index);
     const { subtotal, total } = calculateTotals(newProducts);
 
     setFormData(prev => ({
       ...prev,
-      productofactura: newProducts,
+      Productofactura: JSON.stringify(newProducts),
       subtotal,
       total,
-      catidadproducto: newProducts.reduce((acc, product) => acc + product.cantidad, 0),
+      cantidadproducto: newProducts.reduce((acc, product) => acc + product.cantidad, 0),
     }));
   };
 
@@ -113,8 +135,8 @@ export function IssuedInvoiceForm() {
               <Label htmlFor="nombrecliente">Nombre del Cliente</Label>
               <Input
                 id="nombrecliente"
-                value={formData.nombrecliente}
-                onChange={(e) => setFormData(prev => ({ ...prev, nombrecliente: e.target.value }))}
+                value={formData.Nombrecliente}
+                onChange={(e) => setFormData(prev => ({ ...prev, Nombrecliente: e.target.value }))}
                 required
               />
             </div>
@@ -150,7 +172,7 @@ export function IssuedInvoiceForm() {
             </Button>
           </div>
           
-          {formData.productofactura.map((product, index) => (
+          {getProducts().map((product, index) => (
             <div key={index} className="grid grid-cols-12 gap-4 items-end border-b pb-4">
               <div className="col-span-6 space-y-2">
                 <Label htmlFor={`descripcion-${index}`}>Descripción</Label>
@@ -190,7 +212,7 @@ export function IssuedInvoiceForm() {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeProduct(index)}
-                  disabled={formData.productofactura.length === 1}
+                  disabled={getProducts().length === 1}
                 >
                   <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
@@ -209,7 +231,7 @@ export function IssuedInvoiceForm() {
                 value={formData.tipoiva}
                 onChange={(e) => {
                   const tipoiva = Number(e.target.value);
-                  const { subtotal, total } = calculateTotals(formData.productofactura);
+                  const { subtotal, total } = calculateTotals(getProducts());
                   setFormData(prev => ({ ...prev, tipoiva, subtotal, total }));
                 }}
                 required

@@ -5,7 +5,7 @@ import { IssuedInvoice, CreateIssuedInvoiceDTO } from '../types/issuedInvoice';
 import { getIssuedInvoices, createIssuedInvoice, updateIssuedInvoice, deleteIssuedInvoice } from '../services/issuedInvoices';
 import { useToast } from '@/components/ui/use-toast';
 
-export const useIssuedInvoices = () => {
+export function useIssuedInvoices() {
   const [invoices, setInvoices] = useState<IssuedInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -13,12 +13,15 @@ export const useIssuedInvoices = () => {
 
   const fetchInvoices = async () => {
     try {
-      setLoading(true);
-      const data = await getIssuedInvoices();
-      
-      // The data is already in the correct format thanks to the service
-      setInvoices(data);
-      setError(null);
+      const response = await fetch('/api/facturas/emitidas');
+      if (!response.ok) {
+        throw new Error('Error fetching issued invoices');
+      }
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch issued invoices');
+      }
+      setInvoices(data.invoices);
     } catch (err) {
       setError(err as Error);
       toast({
@@ -31,28 +34,27 @@ export const useIssuedInvoices = () => {
     }
   };
 
-  const createInvoice = async (invoice: CreateIssuedInvoiceDTO) => {
+  const createInvoice = async (invoice: any) => {
     try {
-      setLoading(true);
-      console.log('useIssuedInvoices: Creating invoice with data:', invoice);
-      const newInvoice = await createIssuedInvoice(invoice);
-      console.log('useIssuedInvoices: Invoice created successfully:', newInvoice);
-      setInvoices(prev => [...prev, newInvoice]);
-      toast({
-        title: 'Éxito',
-        description: 'Factura creada correctamente',
+      const response = await fetch('/api/facturas/emitidas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice),
       });
-      return newInvoice;
-    } catch (err) {
-      console.error('useIssuedInvoices: Error creating invoice:', err);
-      toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'No se pudo crear la factura',
-        variant: 'destructive',
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error creating invoice');
+      }
+      
+      const data = await response.json();
+      await fetchInvoices(); // Refresh the list
+      return data.invoice;
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      throw error;
     }
   };
 
@@ -107,9 +109,9 @@ export const useIssuedInvoices = () => {
     invoices,
     loading,
     error,
+    refreshInvoices: fetchInvoices,
     createInvoice,
     updateInvoice,
     deleteInvoice,
-    refreshInvoices: fetchInvoices,
   };
-}; 
+} 

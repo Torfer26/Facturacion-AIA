@@ -1,60 +1,65 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { IssuedInvoice } from '@/lib/types/issuedInvoice'
+import { useIssuedInvoices } from '@/lib/hooks/useIssuedInvoices';
+import { IssuedInvoice } from '@/lib/types/issuedInvoice';
+import Link from 'next/link';
 
-interface ApiResponse {
-  success: boolean;
-  invoices: IssuedInvoice[];
-  error?: string;
+// Función para formatear fechas
+function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return 'N/A';
+  
+  try {
+    const date = new Date(dateString);
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) return 'Fecha inválida';
+    
+    // Formatear con localización española
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch (e) {
+    console.error('Error al formatear fecha:', dateString, e);
+    return 'Error de fecha';
+  }
+}
+
+// Función para formatear moneda
+function formatCurrency(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '0,00 €';
+  return value.toLocaleString('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2
+  });
 }
 
 export default function FacturasEmitidasPage() {
-  const [facturas, setFacturas] = useState<IssuedInvoice[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    const fetchFacturas = async () => {
-      try {
-        const res = await fetch("/api/facturas/emitidas")
-        const data: ApiResponse = await res.json()
-        if (!data.success) throw new Error(data.error || "Error al cargar facturas")
-        setFacturas(data.invoices)
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError("Error desconocido")
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchFacturas()
-  }, [])
+  const { invoices, loading, error } = useIssuedInvoices();
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Facturas Emitidas</h1>
       {loading && <div>Cargando...</div>}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && <div className="text-red-600">{error.message}</div>}
       <div className="mb-4 flex justify-end">
-        <a href="/facturas/emitidas/nueva">
+        <Link href="/facturas/emitidas/nueva">
           <Button>Nueva Factura Emitida</Button>
-        </a>
+        </Link>
       </div>
       <div className="space-y-4">
-        {facturas.map((factura) => (
+        {invoices && invoices.map((factura) => (
           <Card key={factura.id} className="p-4 flex flex-col gap-2">
             <div><b>ID:</b> {factura.facturaID}</div>
             <div><b>Cliente:</b> {factura.Nombrecliente}</div>
-            <div><b>Fecha:</b> {factura.CreationDate}</div>
-            <div><b>Vencimiento:</b> {factura.Fechavencimiento}</div>
-            <div><b>Producto:</b> {factura.Productofactura}</div>
-            <div><b>Total:</b> {factura.total} €</div>
+            <div><b>Fecha:</b> {formatDate(factura.CreationDate)}</div>
+            <div><b>Vencimiento:</b> {formatDate(factura.Fechavencimiento)}</div>
+            <div><b>Producto:</b> {typeof factura.Productofactura === 'string' ? factura.Productofactura : JSON.stringify(factura.Productofactura)}</div>
+            <div><b>Total:</b> {formatCurrency(factura.total)}</div>
             <div><b>Estado:</b> <EstadoFacturaSelect id={factura.id} estado={factura.estadofactura} /></div>
           </Card>
         ))}

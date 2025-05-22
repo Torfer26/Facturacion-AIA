@@ -43,13 +43,28 @@ export async function GET(
       nombrecliente: record.get('Nombrecliente') as string,
       CIFcliente: record.get('CIFcliente') as string,
       direccioncliente: record.get('direccioncliente') as string,
-      productofactura: JSON.parse((record.get('Productofactura') as string) || '[]'),
-      catidadproducto: record.get('catidadproducto') as number,
-      subtotal: record.get('subtotal') as number,
-      tipoiva: record.get('tipoiva') as number,
-      total: record.get('total') as number,
-      estadofactura: record.get('estadofactura') as IssuedInvoice['estadofactura'],
-      datosbancarios: record.get('datosbancarios') as string,
+      productofactura: (() => {
+        const rawValue = record.get('Productofactura');
+        if (!rawValue) return [];
+        if (typeof rawValue === 'object') return rawValue;
+        try {
+          return JSON.parse(rawValue as string);
+        } catch (e) {
+          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
+          // If it's a string that's not valid JSON, just make it a single product
+          return [{
+            descripcion: rawValue as string,
+            cantidad: 1,
+            precioUnitario: 0
+          }];
+        }
+      })(),
+      cantidadproducto: parseFloat(record.get('cantidadproducto') as string) || 0,
+      subtotal: parseFloat(record.get('subtotal') as string) || 0,
+      tipoiva: parseFloat(record.get('tipoiva') as string) || 21,
+      total: parseFloat(record.get('total') as string) || 0,
+      estadofactura: record.get('estadofactura') as IssuedInvoice['estadofactura'] || 'registrada',
+      datosbancarios: record.get('datosbancarios') as string || '',
     };
 
     console.log('API Route: Successfully fetched issued invoice:', {
@@ -91,7 +106,7 @@ export async function PUT(
           CIFcliente: data.CIFcliente,
           direccioncliente: data.direccioncliente,
           Productofactura: data.productofactura ? JSON.stringify(data.productofactura) : undefined,
-          catidadproducto: data.catidadproducto,
+          cantidadproducto: data.cantidadproducto,
           subtotal: data.subtotal,
           tipoiva: data.tipoiva,
           total: data.total,
@@ -110,8 +125,23 @@ export async function PUT(
       nombrecliente: updatedRecord.get('Nombrecliente') as string,
       CIFcliente: updatedRecord.get('CIFcliente') as string,
       direccioncliente: updatedRecord.get('direccioncliente') as string,
-      productofactura: JSON.parse((updatedRecord.get('Productofactura') as string) || '[]'),
-      catidadproducto: updatedRecord.get('catidadproducto') as number,
+      productofactura: (() => {
+        const rawValue = updatedRecord.get('Productofactura');
+        if (!rawValue) return [];
+        if (typeof rawValue === 'object') return rawValue;
+        try {
+          return JSON.parse(rawValue as string);
+        } catch (e) {
+          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
+          // If it's a string that's not valid JSON, just make it a single product
+          return [{
+            descripcion: rawValue as string,
+            cantidad: 1,
+            precioUnitario: 0
+          }];
+        }
+      })(),
+      cantidadproducto: updatedRecord.get('cantidadproducto') as number,
       subtotal: updatedRecord.get('subtotal') as number,
       tipoiva: updatedRecord.get('tipoiva') as number,
       total: updatedRecord.get('total') as number,

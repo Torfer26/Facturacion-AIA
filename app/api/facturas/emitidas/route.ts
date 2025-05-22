@@ -31,6 +31,14 @@ export async function GET() {
       sort: [{ field: 'facturaID', direction: 'desc' }]
     }).all();
 
+    console.log('Registros desde Airtable:', records.map(r => ({
+      id: r.id,
+      total: r.get('total'),
+      tipoTotal: typeof r.get('total'),
+      fecha: r.get('CreationDate'),
+      tipoFecha: typeof r.get('CreationDate')
+    })));
+
     const invoices = records.map(record => ({
       id: record.id,
       facturaID: record.get('facturaID') as string,
@@ -39,14 +47,33 @@ export async function GET() {
       Nombrecliente: record.get('Nombrecliente') as string,
       CIFcliente: record.get('CIFcliente') as string,
       direccioncliente: record.get('direccioncliente') as string,
-      Productofactura: record.get('Productofactura') as string,
-      cantidadproducto: record.get('cantidadproducto') as number,
-      subtotal: record.get('subtotal') as number,
-      tipoiva: record.get('tipoiva') as number,
-      total: record.get('total') as number,
-      estadofactura: record.get('estadofactura') as IssuedInvoice['estadofactura'],
-      datosbancarios: record.get('datosbancarios') as string,
+      Productofactura: (() => {
+        const rawValue = record.get('Productofactura');
+        if (!rawValue) return '';
+        if (typeof rawValue === 'object') return JSON.stringify(rawValue);
+        try {
+          return JSON.parse(rawValue as string);
+        } catch (e) {
+          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
+          // If it's a string that's not valid JSON, just return it as is
+          return rawValue;
+        }
+      })(),
+      cantidadproducto: parseFloat(record.get('cantidadproducto') as string) || 0,
+      subtotal: parseFloat(record.get('subtotal') as string) || 0,
+      tipoiva: parseFloat(record.get('tipoiva') as string) || 21,
+      total: parseFloat(record.get('total') as string) || 0,
+      estadofactura: record.get('estadofactura') as IssuedInvoice['estadofactura'] || 'registrada',
+      datosbancarios: record.get('datosbancarios') as string || '',
     }));
+
+    console.log('Facturas procesadas:', invoices.map(i => ({
+      id: i.id,
+      total: i.total,
+      tipoTotal: typeof i.total,
+      fecha: i.CreationDate,
+      tipoFecha: typeof i.CreationDate
+    })));
     
 
     return NextResponse.json({
@@ -82,7 +109,7 @@ export async function POST(request: Request) {
       CIFcliente: body.CIFcliente,
       direccioncliente: body.direccioncliente,
       Productofactura: body.Productofactura,
-      catidadproducto: body.catidadproducto,
+      cantidadproducto: body.cantidadproducto,
       subtotal: body.subtotal,
       tipoiva: body.tipoiva,
       total: body.total,
@@ -125,7 +152,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           CIFcliente: data.CIFcliente,
           direccioncliente: data.direccioncliente,
           Productofactura: data.Productofactura,
-          catidadproducto: data.catidadproducto,
+          cantidadproducto: data.cantidadproducto,
           subtotal: data.subtotal,
           tipoiva: data.tipoiva,
           total: data.total,

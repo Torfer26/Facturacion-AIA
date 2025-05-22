@@ -16,7 +16,7 @@ export default function NuevaFacturaEmitidaPage() {
     CIFcliente: "",
     direccioncliente: "",
     Productofactura: "",
-    catidadproducto: 1,
+    cantidadproducto: 1,
     subtotal: 0,
     tipoiva: 21,
     total: 0,
@@ -86,7 +86,7 @@ export default function NuevaFacturaEmitidaPage() {
             </div>
             <div>
               <Label>Cantidad producto</Label>
-              <Input type="number" name="catidadproducto" value={formData.catidadproducto} onChange={handleChange} min={1} required />
+              <Input type="number" name="cantidadproducto" value={formData.cantidadproducto} onChange={handleChange} min={1} required />
             </div>
             <div>
               <Label>Subtotal</Label>
