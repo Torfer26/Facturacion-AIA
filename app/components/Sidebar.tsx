@@ -12,7 +12,8 @@ import {
   FileOutput,
   FileInput
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -25,6 +26,11 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { logout, user } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+  }
 
   return (
     <div className="flex h-screen flex-col justify-between border-r bg-white">
@@ -45,6 +51,13 @@ export default function Sidebar() {
           </span>
           FiscalApp
         </Link>
+
+        {user && (
+          <div className="mt-4 px-2">
+            <p className="text-sm font-medium text-gray-700">Hola, {user.name}</p>
+            <p className="text-xs text-gray-500">{user.email}</p>
+          </div>
+        )}
 
         <nav className="mt-6 flex flex-1 flex-col">
           <ul role="list" className="space-y-1">
@@ -74,6 +87,7 @@ export default function Sidebar() {
       <div className="sticky inset-x-0 bottom-0 border-t border-gray-100 bg-white p-2">
         <button
           type="button"
+          onClick={handleLogout}
           className="group relative flex w-full items-center gap-x-2 rounded-lg px-4 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-red-700"
         >
           <LogOut className="h-5 w-5 text-gray-400 group-hover:text-red-700" />

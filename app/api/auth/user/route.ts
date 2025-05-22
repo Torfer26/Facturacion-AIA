@@ -27,8 +27,9 @@ export async function GET() {
       success: true,
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
         name: user.name,
+        role: user.role
       },
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,19 +9,40 @@ import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
-  // Si el usuario no está autenticado, redirigir al login
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
+    // Only redirect if we're sure user is not authenticated (loading is complete)
+    if (!isLoading && !isAuthenticated) {
+      console.log("Dashboard - Not authenticated, redirecting to login");
+      window.location.href = "/login";
     }
-  }, [loading, user, router]);
+  }, [isLoading, isAuthenticated]);
 
-  if (loading) {
+  // Show loading state while checking authentication
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Cargando...</p>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Cargando...</h2>
+          <p className="text-gray-500">Verificando autenticación</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Safety check - don't show dashboard content if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Acceso Restringido</h2>
+          <p className="text-gray-500 mb-4">Debe iniciar sesión para acceder a esta página</p>
+          <Button onClick={() => window.location.href = "/login"}>
+            Iniciar Sesión
+          </Button>
+        </div>
       </div>
     );
   }
@@ -31,7 +52,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Panel de Control</h1>
         <div className="flex items-center gap-4">
-          <span>Bienvenido, {user?.username}</span>
+          <span>Bienvenido, {user.name}</span>
           <Button variant="outline" onClick={logout}>
             Cerrar sesión
           </Button>
@@ -50,7 +71,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/facturas/recibidas" className="block">
+        <Link href="/recibidas" className="block">
           <Card className="h-full hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle>Facturas Recibidas</CardTitle>

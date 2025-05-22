@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Invoice } from '@/lib/types';
+import { getAuthToken } from './useAuth';
+import { handleClientError, NetworkError, DataError } from '@/lib/utils/errorHandler';
 
 export function useInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -12,19 +14,31 @@ export function useInvoices() {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('/api/facturas');
-      if (!response.ok) {
-        throw new Error('Error fetching invoices');
-      }
-      const data = await response.json();
-      setInvoices(data.invoices);
-    } catch (err) {
-      setError(err as Error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar las facturas',
-        variant: 'destructive',
+      setLoading(true);
+      const token = getAuthToken();
+      
+      const response = await fetch('/api/facturas', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        }
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new DataError(errorData.error || 'Error fetching invoices', errorData);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new DataError(data.error || 'Failed to fetch invoices', data);
+      }
+      
+      setInvoices(data.invoices || []);
+      setError(null);
+    } catch (err) {
+      const appError = handleClientError(err, toast);
+      setError(appError);
     } finally {
       setLoading(false);
     }

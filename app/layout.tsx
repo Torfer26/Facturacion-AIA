@@ -1,7 +1,6 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Sidebar from './components/Sidebar'
-import { usePathname } from 'next/navigation'
+import { AuthProvider } from '@/lib/hooks/useAuth'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,9 +17,9 @@ export default function RootLayout({
   return (
     <html lang="es" className="h-full bg-gray-50">
       <body className={`${inter.className} h-full`}>
-        <div className="flex h-full">
+        <AuthProvider>
           {children}
-        </div>
+        </AuthProvider>
       </body>
     </html>
   )
