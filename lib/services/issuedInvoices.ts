@@ -54,19 +54,16 @@ export const getIssuedInvoices = async (): Promise<IssuedInvoice[]> => {
       datosbancarios: '',
     }));
   } catch (error) {
-    console.error('Error fetching issued invoices:', error);
     throw error;
   }
 };
 
 export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Promise<IssuedInvoice> => {
   try {
-    console.log('Creating invoice with data:', JSON.stringify(invoice));
+    );
     
     // Try the main endpoint first
     const mainApiUrl = getApiUrl(API_PATH);
-    console.log('Using API URL:', mainApiUrl);
-    
     const response = await fetch(mainApiUrl, {
       method: 'POST',
       headers: {
@@ -77,28 +74,20 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
       cache: 'no-store'
     });
     
-    console.log('Response status:', response.status);
-    
     // If the response is not OK, try the emitidas endpoint as fallback
     if (!response.ok) {
-      console.error('Error response from main endpoint:', response.statusText);
-      
       // Try to get more details about the error
       let errorDetails = '';
       try {
         const errorData = await response.text();
         if (errorData) {
-          console.error('Error details:', errorData);
           errorDetails = errorData;
         }
       } catch (e) {
-        console.error('Could not parse error response:', e);
-      }
+        }
       
       // Try the emitidas endpoint as fallback
       const emitApiUrl = getApiUrl(`${API_PATH}/emitidas`);
-      console.log('Trying fallback API URL:', emitApiUrl);
-      
       const emitResponse = await fetch(emitApiUrl, {
         method: 'POST',
         headers: {
@@ -108,16 +97,10 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
         cache: 'no-store'
       });
       
-      console.log('Emitidas response status:', emitResponse.status);
-      
       if (!emitResponse.ok) {
         const errorText = await emitResponse.text();
-        console.error('Error response from emitidas endpoint:', errorText || emitResponse.statusText);
-        
         // If both endpoints fail, create a mock response
         if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-          console.log('Creating mock response since both endpoints failed');
-          
           // Create a mock invoice for development
           return {
             id: 'mock-client-' + Date.now(),
@@ -151,8 +134,6 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
         
         throw new Error('Unexpected response format from emitidas endpoint');
       } catch (parseError) {
-        console.error('Error parsing emitidas response:', parseError);
-        
         // If parsing fails, create a mock response
         if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
           // Create a mock invoice for development
@@ -181,8 +162,6 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
     // Parse the response from the main endpoint
     try {
       const responseText = await response.text();
-      console.log('Response text length:', responseText.length);
-      
       // Only try to parse as JSON if there's content
       if (!responseText) {
         throw new Error('Empty response from server');
@@ -197,8 +176,6 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
       
       throw new Error('Unexpected response format from server');
     } catch (parseError) {
-      console.error('Error parsing main endpoint response:', parseError);
-      
       // If parsing fails, create a mock response
       if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
         // Create a mock invoice for development
@@ -223,12 +200,8 @@ export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Prom
       throw new Error('Failed to parse response from server');
     }
   } catch (error) {
-    console.error('Error creating issued invoice:', error);
-    
     // Last resort fallback for the client side in development
     if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-      console.log('Creating mock response as last resort fallback');
-      
       // Create a mock invoice for development
       return {
         id: 'mock-fallback-' + Date.now(),
@@ -295,7 +268,6 @@ export const updateIssuedInvoice = async (id: string, invoice: Partial<IssuedInv
     const data = await response.json();
     return data.invoice;
   } catch (error) {
-    console.error('Error updating issued invoice:', error);
     throw error;
   }
 };
@@ -312,7 +284,6 @@ export const deleteIssuedInvoice = async (id: string): Promise<void> => {
       throw new Error(errorData.error || 'Error deleting issued invoice');
     }
   } catch (error) {
-    console.error('Error deleting issued invoice:', error);
     throw error;
   }
 }; 

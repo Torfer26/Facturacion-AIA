@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
       message: 'Invoice status updated successfully'
     });
   } catch (error) {
-    console.error('Error processing webhook:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -95,16 +95,13 @@ export function IssuedInvoiceForm() {
     setLoading(true);
 
     try {
-      console.log('Submitting form with data:', formData);
       const newInvoice = await createInvoice(formData);
-      console.log('Created invoice:', newInvoice);
       toast({
         title: 'Éxito',
         description: 'Factura creada correctamente',
       });
       router.push('/facturas/emitidas');
     } catch (error) {
-      console.error('Error while creating invoice:', error);
       toast({
         title: 'Error',
         description: 'No se pudo crear la factura',

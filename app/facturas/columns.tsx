@@ -46,7 +46,6 @@ export const columns: ColumnDef<Invoice>[] = [
         }
         return date.toLocaleDateString('es-ES');
       } catch (e) {
-        console.error('Error formatting date:', e);
         return String(dateValue);
       }
     },

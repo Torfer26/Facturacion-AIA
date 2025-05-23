@@ -15,7 +15,6 @@ export default function DashboardPage() {
   useEffect(() => {
     // Only redirect if we're sure user is not authenticated (loading is complete)
     if (!isLoading && !isAuthenticated) {
-      console.log("Dashboard - Not authenticated, redirecting to login");
       window.location.href = "/login";
     }
   }, [isLoading, isAuthenticated]);

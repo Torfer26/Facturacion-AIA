@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { verifyToken as verifyJWT } from './lib/auth-v2/jwt-edge';
 
 // List of paths that don't require authentication
 const publicPaths = [
   '/',
   '/login',
+  '/login-v2',
+  '/test-auth',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/check',
+  '/api/v2/auth/login',
+  '/api/v2/auth/logout',
   '/_next',
   '/favicon.ico',
   '/.well-known',
@@ -67,8 +72,26 @@ export async function middleware(request: NextRequest) {
   }
   
   try {
-    // Verify token validity
-    const user = await verifyToken(finalToken);
+    // Try to verify token with both systems
+    let user = await verifyToken(finalToken); // V1 system
+    
+    if (!user) {
+      // Try V2 system (JWT)
+      try {
+        const jwtUser = await verifyJWT(finalToken);
+        if (jwtUser) {
+          user = {
+            id: jwtUser.id,
+            email: jwtUser.email,
+            name: jwtUser.name || jwtUser.email,
+            role: jwtUser.role.toLowerCase()
+          };
+        }
+      } catch (error) {
+        // JWT verification failed, user remains null
+      }
+    }
+    
     console.log('Middleware - token verification result:', !!user);
     
     // If invalid token and this is an API route, return 401

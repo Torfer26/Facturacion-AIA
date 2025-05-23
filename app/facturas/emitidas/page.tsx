@@ -23,7 +23,6 @@ function formatDate(dateString: string | null | undefined): string {
       year: 'numeric'
     });
   } catch (e) {
-    console.error('Error al formatear fecha:', dateString, e);
     return 'Error de fecha';
   }
 }

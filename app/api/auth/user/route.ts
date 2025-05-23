@@ -33,7 +33,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Error obteniendo información del usuario:', error);
     return NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
       { status: 500 }

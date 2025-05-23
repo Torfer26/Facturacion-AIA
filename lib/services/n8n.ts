@@ -58,7 +58,6 @@ export async function requestInvoiceProcessing({
       jobId: responseData.jobId,
     };
   } catch (error) {
-    console.error('Error al solicitar procesamiento de factura:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error desconocido al procesar factura',
@@ -73,7 +72,6 @@ export function validateWebhookRequest(apiKey: string): boolean {
   const expectedApiKey = process.env.N8N_API_KEY;
   
   if (!expectedApiKey) {
-    console.warn('API Key de n8n no configurada');
     return false;
   }
   

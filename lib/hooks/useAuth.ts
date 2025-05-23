@@ -67,8 +67,7 @@ const safeStorage = {
       const value = localStorage.getItem(key);
       if (value) return value;
     } catch (error) {
-      console.error('Error accessing localStorage:', error);
-    }
+      }
     
     // Fall back to cookies
     return cookies.get(key);
@@ -83,16 +82,14 @@ const safeStorage = {
       localStorage.setItem(key, value);
       success = true;
     } catch (error) {
-      console.error('Error writing to localStorage:', error);
-    }
+      }
     
     // Also set cookie as backup
     try {
       cookies.set(key, value);
       success = true;
     } catch (error) {
-      console.error('Error setting cookie:', error);
-    }
+      }
     
     return success;
   },
@@ -106,16 +103,14 @@ const safeStorage = {
       localStorage.removeItem(key);
       success = true;
     } catch (error) {
-      console.error('Error removing from localStorage:', error);
-    }
+      }
     
     // Also remove cookie
     try {
       cookies.remove(key);
       success = true;
     } catch (error) {
-      console.error('Error removing cookie:', error);
-    }
+      }
     
     return success;
   }
@@ -178,14 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const token = safeStorage.getItem(TOKEN_KEY);
-        console.log('Auth check - token exists:', !!token);
-        
         if (!token) {
           setIsLoading(false);
           return;
         }
 
-        console.log('Auth check - calling API...');
         const response = await fetch('/api/auth/check', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -193,25 +185,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         });
 
-        console.log('Auth check - API response status:', response.status);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Auth check - API data:', data);
-          
           if (data.authenticated && data.user) {
-            console.log('Auth check - Setting user:', data.user);
             setUser(data.user);
           } else {
-            console.log('Auth check - Authentication failed, removing token');
             safeStorage.removeItem(TOKEN_KEY);
           }
         } else {
-          console.log('Auth check - Invalid response, removing token');
           safeStorage.removeItem(TOKEN_KEY);
         }
       } catch (err) {
-        console.error('Auth check error:', err);
         safeStorage.removeItem(TOKEN_KEY);
       } finally {
         setIsLoading(false);
@@ -225,8 +209,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setError(null);
     setIsLoading(true);
-    console.log('Login function called with email:', email);
-
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -236,32 +218,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Login API response status:', response.status);
       const data = await response.json();
-      console.log('Login API response data:', data);
-
       if (!response.ok) {
         const errorMsg = data.error || 'Error en el inicio de sesión';
-        console.error('Login failed:', errorMsg);
         setError(errorMsg);
         return false;
       }
 
       if (!data.success) {
         const errorMsg = data.error || 'Credenciales inválidas';
-        console.error('Login unsuccessful:', errorMsg);
         setError(errorMsg);
         return false;
       }
 
       if (!data.token) {
-        console.error('Login failed: No token provided');
         setError('No se recibió un token de autenticación');
         return false;
       }
 
       // Save token and user data
-      console.log('Login successful, saving token and user data');
       const saved = safeStorage.setItem(TOKEN_KEY, data.token);
       
       if (!saved) {
@@ -270,11 +245,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setUser(data.user);
-      console.log('User data set:', data.user);
-      
       // For testing: Create a mock user if API doesn't return one
       if (!data.user && email === 'admin@facturas.com') {
-        console.log('Creating mock user for test account');
         const mockUser = {
           id: 'admin-1',
           email: 'admin@facturas.com',
@@ -286,7 +258,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return true;
     } catch (err) {
-      console.error('Login error:', err);
       setError('Error en el servidor, inténtelo de nuevo');
       return false;
     } finally {
@@ -297,19 +268,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Logout function
   const logout = async () => {
     setIsLoading(true);
-    console.log('Logout function called');
-    
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      console.log('Logout API call successful');
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      console.log('Removing token and user data');
+      } catch (err) {
+      } finally {
       safeStorage.removeItem(TOKEN_KEY);
       setUser(null);
       setIsLoading(false);
-      console.log('Redirecting to login page');
       window.location.href = '/login';
     }
   };

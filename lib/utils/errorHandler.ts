@@ -103,8 +103,6 @@ export function handleZodError(error: z.ZodError): ValidationError {
 
 // Helper to handle errors in API routes
 export function handleApiError(error: unknown): ErrorResponse {
-  console.error('API Error:', error);
-
   if (error instanceof AppError) {
     return error.toResponse();
   }
@@ -122,8 +120,6 @@ export function handleApiError(error: unknown): ErrorResponse {
 
 // Helper for client-side error handling
 export function handleClientError(error: unknown, toast?: any): Error {
-  console.error('Client error:', error);
-
   let appError: AppError;
 
   if (error instanceof AppError) {

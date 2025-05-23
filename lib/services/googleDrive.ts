@@ -52,7 +52,6 @@ export async function uploadFile({ folderId, fileName, mimeType, fileContent }: 
 
     return response.data as FileMetadata;
   } catch (error) {
-    console.error('Error al subir archivo a Google Drive:', error);
     throw new Error('No se pudo subir el archivo a Google Drive');
   }
 }
@@ -69,7 +68,6 @@ export async function listFiles(folderId: string): Promise<FileMetadata[]> {
 
     return response.data.files as FileMetadata[];
   } catch (error) {
-    console.error('Error al listar archivos de Google Drive:', error);
     throw new Error('No se pudieron listar los archivos de Google Drive');
   }
 }
@@ -92,7 +90,6 @@ export async function createFolder(folderName: string, parentFolderId?: string):
 
     return response.data.id as string;
   } catch (error) {
-    console.error('Error al crear carpeta en Google Drive:', error);
     throw new Error('No se pudo crear la carpeta en Google Drive');
   }
 }

@@ -30,7 +30,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated && user && !redirectAttempted) {
       setRedirectAttempted(true);
-      console.log('User is authenticated, redirecting to dashboard');
       setDebugInfo('Authenticated as: ' + user.email + '. Redirecting...');
       
       // Use direct navigation after a delay
@@ -80,18 +79,13 @@ export default function LoginPage() {
     try {
       setLoginStatus('Intentando iniciar sesión...');
       setDebugInfo('Login attempt with: ' + formData.email);
-      console.log('Login attempt with:', formData.email);
-      
       const success = await login(formData.email, formData.password);
       
-      console.log('Login result:', success);
       setLoginStatus(success ? 'Inicio de sesión exitoso' : 'Falló el inicio de sesión');
       setDebugInfo(success ? 'Login successful, waiting for redirect' : 'Login failed');
       
       if (success) {
         // Don't redirect here - let the useEffect handle it
-        console.log('Login successful, useEffect will handle redirect');
-        
         // Still show a message
         setLoginStatus('Inicio de sesión exitoso. Redirigiendo...');
         
@@ -100,11 +94,9 @@ export default function LoginPage() {
           localStorage.setItem('auth-token', 'backup-token-' + Date.now());
           setDebugInfo(prev => prev + ' | Token backup saved');
         } catch (err) {
-          console.error('Error saving backup token:', err);
-        }
+          }
       }
     } catch (err) {
-      console.error('Login error:', err);
       setLoginStatus('Error durante el inicio de sesión');
       setDebugInfo('Login error: ' + (err instanceof Error ? err.message : String(err)));
     }
@@ -236,7 +228,7 @@ export default function LoginPage() {
             <div className="relative">
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 text-gray-500">
-                  Credenciales de prueba: admin@facturas.com / admin123
+                  Credenciales de prueba: admin@facturas.com / Admin123@Facturas2024!
                 </span>
               </div>
             </div>

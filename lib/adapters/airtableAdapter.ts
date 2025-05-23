@@ -68,7 +68,6 @@ export function airtableToInvoice(record: AirtableRecord): Invoice {
     // Validate the invoice with our schema
     return InvoiceSchema.parse(invoice);
   } catch (error) {
-    console.error('Error adapting Airtable record:', error);
     // Return a minimal valid invoice with the ID
     return { id: record.id };
   }

@@ -49,8 +49,6 @@ function getFechaHoraMadrid() {
 }
 
 export async function POST(request: Request) {
-  console.log('Starting file upload process...')
-  
   try {
     // Verificar las variables de entorno requeridas
     const requiredEnvVars = {
@@ -64,7 +62,6 @@ export async function POST(request: Request) {
       .map(([key]) => key)
 
     if (missingVars.length > 0) {
-      console.error('Missing required environment variables:', missingVars)
       return NextResponse.json(
         { 
           success: false, 
@@ -75,7 +72,6 @@ export async function POST(request: Request) {
     }
 
     // Inicializar Google Drive
-    console.log('Initializing Google Drive client...')
     const auth = getGoogleDriveAuth()
     const drive = google.drive({ version: 'v3', auth })
 
@@ -83,13 +79,6 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const tipo = formData.get('tipo') as string
-
-    console.log('File received:', {
-      name: file?.name,
-      type: file?.type,
-      size: file?.size,
-      uploadType: tipo
-    })
 
     if (!file) {
       return NextResponse.json(
@@ -129,12 +118,6 @@ export async function POST(request: Request) {
     stream.push(buffer)
     stream.push(null)
 
-    console.log('Uploading file to Google Drive:', {
-      fileName: `${tipo}_${fechaHora}_${file.name}`,
-      mimeType: file.type,
-      folderId: process.env.GOOGLE_DRIVE_FOLDER_ID
-    })
-
     // Subir a Google Drive
     const response = await drive.files.create({
       requestBody: {
@@ -148,11 +131,6 @@ export async function POST(request: Request) {
       },
     })
 
-    console.log('File uploaded successfully:', {
-      fileId: response.data.id,
-      webViewLink: response.data.webViewLink
-    })
-
     return NextResponse.json({
       success: true,
       fileId: response.data.id,
@@ -161,12 +139,6 @@ export async function POST(request: Request) {
     })
 
   } catch (error) {
-    console.error('Error details:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
-
     return NextResponse.json({ 
       success: false, 
       error: 'Error al subir el archivo a Google Drive',

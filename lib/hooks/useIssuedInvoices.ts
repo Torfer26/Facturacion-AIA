@@ -66,7 +66,6 @@ export function useIssuedInvoices() {
       await fetchInvoices(); // Refresh the list
       return data.invoice;
     } catch (error) {
-      console.error('Error creating invoice:', error);
       throw error;
     }
   };

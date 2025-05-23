@@ -11,8 +11,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Application error:', error)
-  }, [error])
+    }, [error])
 
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">

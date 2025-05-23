@@ -26,8 +26,6 @@ export async function GET(
 ) {
   try {
     const id = params.id;
-    console.log(`API Route: Starting request for issued invoice with ID: ${id}`)
-    
     // Get the Airtable table reference
     const table = getAirtableBase();
     
@@ -50,7 +48,6 @@ export async function GET(
         try {
           return JSON.parse(rawValue as string);
         } catch (e) {
-          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
           // If it's a string that's not valid JSON, just make it a single product
           return [{
             descripcion: rawValue as string,
@@ -67,9 +64,6 @@ export async function GET(
       datosbancarios: record.get('datosbancarios') as string || '',
     };
 
-    console.log('API Route: Successfully fetched issued invoice:', {
-      id: invoice.id,
-      timestamp: getNormalizedTimestamp()
     })
 
     return NextResponse.json({
@@ -78,7 +72,6 @@ export async function GET(
       timestamp: getNormalizedTimestamp()
     })
   } catch (error) {
-    console.error('API Route: Error fetching issued invoice:', error)
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido al obtener la factura emitida',
@@ -132,7 +125,6 @@ export async function PUT(
         try {
           return JSON.parse(rawValue as string);
         } catch (e) {
-          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
           // If it's a string that's not valid JSON, just make it a single product
           return [{
             descripcion: rawValue as string,
@@ -155,7 +147,6 @@ export async function PUT(
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
-    console.error('API Route: Error updating issued invoice:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error updating invoice',
@@ -180,7 +171,6 @@ export async function DELETE(
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
-    console.error('API Route: Error deleting issued invoice:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error deleting invoice',

@@ -11,7 +11,6 @@ function normalizeDate(dateString: string): string {
     }
     return dateString;
   } catch (e) {
-    console.error('Error normalizing date:', e);
     return dateString;
   }
 }
@@ -26,7 +25,6 @@ const requiredEnvVars = {
 // Verificar que todas las variables de entorno necesarias estén definidas
 Object.entries(requiredEnvVars).forEach(([key, value]) => {
   if (!value) {
-    console.error(`Missing environment variable: ${key}. Available env vars:`, process.env)
     throw new Error(`Missing required environment variable: ${key}`)
   }
 })
@@ -38,25 +36,11 @@ const AIRTABLE_TABLE_NAME_RECIBIDAS = process.env.AIRTABLE_TABLE_NAME_RECIBIDAS;
 
 export async function getInvoices(): Promise<Invoice[]> {
   try {
-    console.log('Airtable Service: Starting request with config:', {
-      baseId: AIRTABLE_BASE_ID,
-      apiUrl: AIRTABLE_API_URL,
-      hasApiKey: !!AIRTABLE_API_KEY,
-      envVars: process.env
-    })
-
     const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_RECIBIDAS}`
-    console.log('Airtable Service: Request URL:', url)
-
     const headers = {
       'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
     }
-
-    console.log('Airtable Service: Making request with headers:', {
-      ...headers,
-      'Authorization': headers.Authorization ? 'Bearer [REDACTED]' : undefined
-    })
 
     const response = await fetch(url, {
       headers,
@@ -65,37 +49,17 @@ export async function getInvoices(): Promise<Invoice[]> {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Airtable Service: API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        url: response.url
-      })
       throw new Error(`Error en la API de Airtable: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
-    console.log('Airtable Service: Received data:', {
-      hasRecords: !!data.records,
-      recordCount: data.records?.length,
-      firstRecord: data.records?.[0] ? {
-        id: data.records[0].id,
-        fields: Object.keys(data.records[0].fields)
-      } : null
-    })
     
     if (!data.records || !Array.isArray(data.records)) {
-      console.error('Airtable Service: Invalid response structure:', data)
       throw new Error('Respuesta inválida de Airtable: no se encontraron registros')
     }
 
     const invoices = data.records.map((record: any) => {
       try {
-        console.log('Airtable Service: Processing record:', {
-          id: record.id,
-          availableFields: Object.keys(record.fields)
-        })
-
         const invoice: Invoice = {
           id: record.id,
           invoiceDate: normalizeDate(record.fields.InvoiceDate || ''),
@@ -115,30 +79,14 @@ export async function getInvoices(): Promise<Invoice[]> {
           updatedAt: normalizeDate(record.createdTime)
         }
 
-        console.log('Airtable Service: Successfully processed record:', {
-          id: invoice.id,
-          invoiceNumber: invoice.invoiceNumber,
-          customerName: invoice.customerName
-        })
-
         return invoice
       } catch (err) {
-        console.error('Airtable Service: Error processing record:', {
-          recordId: record.id,
-          error: err instanceof Error ? err.message : 'Error desconocido',
-          fields: record.fields
-        })
         throw err
       }
     })
 
-    console.log('Airtable Service: Successfully processed all records:', {
-      totalInvoices: invoices.length
-    })
-
     return invoices
   } catch (error) {
-    console.error('Airtable Service: Fatal error:', error)
     throw error
   }
 } 

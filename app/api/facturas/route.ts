@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getInvoices } from '@/lib/services/airtable'
 import Airtable from 'airtable'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { verifyToken as verifyJWT } from '@/lib/auth-v2/jwt'
 import { z } from 'zod'
 import { Invoice } from '@/lib/types'
 
@@ -25,16 +26,41 @@ function getAirtableBase() {
 
 // Check authentication helper
 async function checkAuth(request: Request) {
-  // Get token from Authorization header
-  const authHeader = request.headers.get('Authorization');
-  const token = getTokenFromHeader(authHeader || '');
+  // Get token from cookies (same as middleware)
+  const cookieHeader = request.headers.get('cookie') || '';
+  
+  const cookies = Object.fromEntries(
+    cookieHeader.split(';').map(cookie => {
+      const [name, value] = cookie.trim().split('=');
+      return [name, value];
+    })
+  );
+  
+  const token = cookies['auth-token'];
   
   if (!token) {
     return { authenticated: false, error: 'No authentication token provided' };
   }
   
-  // Verify token
-  const user = await verifyToken(token);
+  // Try to verify token with both systems
+  let user = await verifyToken(token); // V1 system
+  
+  if (!user) {
+    // Try V2 system (JWT)
+    try {
+      const jwtUser = await verifyJWT(token);
+      if (jwtUser) {
+        user = {
+          id: jwtUser.id,
+          email: jwtUser.email,
+          name: jwtUser.name || jwtUser.email, // Use name or email as fallback
+          role: jwtUser.role.toLowerCase()
+        };
+      }
+    } catch (error) {
+      // JWT verification failed, user remains null
+    }
+  }
   
   if (!user) {
     return { authenticated: false, error: 'Invalid authentication token' };
@@ -45,8 +71,6 @@ async function checkAuth(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    console.log('API Route: Starting request for invoices');
-    
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
@@ -68,7 +92,6 @@ export async function GET(request: Request) {
       .map(([key]) => key)
 
     if (missingVars.length > 0) {
-      console.error('API Route: Missing environment variables:', missingVars)
       return NextResponse.json({
         success: false,
         error: `Missing required environment variables: ${missingVars.join(', ')}`,
@@ -76,16 +99,10 @@ export async function GET(request: Request) {
       }, { status: 500 })
     }
 
-    console.log('API Route: Fetching invoices from Airtable')
     const airtableInvoices = await getInvoices()
     
     // No need for transformation since getInvoices already returns Invoice objects
     const invoices = airtableInvoices;
-    
-    console.log('API Route: Successfully fetched invoices:', {
-      count: invoices.length,
-      timestamp: getNormalizedTimestamp()
-    })
 
     return NextResponse.json({
       success: true,
@@ -96,7 +113,6 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error('API Route: Error fetching invoices:', error)
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido al obtener las facturas',
@@ -126,8 +142,6 @@ const InvoiceCreationSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    console.log('API Route: Starting request to create invoice');
-    
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
@@ -148,7 +162,6 @@ export async function POST(request: Request) {
       .map(([key]) => key)
 
     if (missingVars.length > 0) {
-      console.error('API Route: Missing environment variables:', missingVars)
       return NextResponse.json({
         success: false,
         error: `Missing required environment variables: ${missingVars.join(', ')}`,
@@ -158,8 +171,6 @@ export async function POST(request: Request) {
 
     // Get the data from the request
     const data = await request.json();
-    console.log('API Route: Received invoice data:', data);
-    
     // Validate the request data
     const validationResult = InvoiceCreationSchema.safeParse(data);
     if (!validationResult.success) {
@@ -193,21 +204,14 @@ export async function POST(request: Request) {
       };
       
       // Log the data being sent to Airtable
-      console.log('API Route: Data being sent to Airtable:', invoiceData);
-      
       // Create the record in Airtable
-      console.log('API Route: Creating invoice in Airtable');
-      
       let record;
       try {
         record = await table.create([{ fields: invoiceData }]);
       } catch (airtableError) {
-        console.error('API Route: Airtable error while creating record:', airtableError);
-        
         // In development or testing, create a mock record if Airtable fails
         // This allows the UI to function even if Airtable integration has issues
         if (process.env.NODE_ENV !== 'production') {
-          console.log('API Route: Using mock record in development mode');
           const timestamp = getNormalizedTimestamp();
           return NextResponse.json({
             success: true,
@@ -238,13 +242,10 @@ export async function POST(request: Request) {
       }
       
       if (!record || record.length === 0) {
-        console.error('API Route: Failed to create invoice in Airtable - empty record returned');
         throw new Error('Failed to create invoice in Airtable');
       }
       
       const createdRecord = record[0];
-      console.log('API Route: Created invoice with ID:', createdRecord.id);
-      
       // Convert the created record to our invoice format
       const invoice: Invoice = {
         id: createdRecord.id,
@@ -271,11 +272,6 @@ export async function POST(request: Request) {
       };
       
       // Return the created invoice
-      console.log('API Route: Returning created invoice:', {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber
-      });
-      
       const timestamp = getNormalizedTimestamp();
       return NextResponse.json({
         success: true,
@@ -283,7 +279,6 @@ export async function POST(request: Request) {
         timestamp
       });
     } catch (error) {
-      console.error('API Route: Error creating invoice:', error);
       return NextResponse.json({
         success: false,
         error: error instanceof Error ? error.message : 'Error creando la factura',
@@ -291,7 +286,6 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('API Route: Error processing request:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error procesando la solicitud',

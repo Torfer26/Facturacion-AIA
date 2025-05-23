@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 // Esta sería nuestra "base de datos" de usuarios (para demostración)
 const USERS = [
-  { id: '1', email: 'admin@facturas.com', password: 'admin123', name: 'Administrador', role: 'admin' }
+  { id: '1', email: 'admin@facturas.com', password: 'Admin123@Facturas2024!', name: 'Administrador', role: 'admin' }
 ];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-change-in-production';
@@ -53,7 +53,6 @@ export async function signToken(user: Omit<User, 'password'>): Promise<string> {
 
 // Función para verificar un token
 export async function verifyToken(token: string): Promise<User | null> {
-  console.log('Verifying token:', token.substring(0, 10) + '...');
   
   // For test tokens, return a mock user
   if (token.startsWith('test-token-') || token.startsWith('backup-token-')) {
@@ -128,7 +127,6 @@ export async function checkAuth(): Promise<User | null> {
     
     return null;
   } catch (error) {
-    console.error('Error verificando autenticación:', error);
     return null;
   }
 }

@@ -15,11 +15,11 @@ export function useInvoices() {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const token = getAuthToken();
       
       const response = await fetch('/api/facturas', {
+        credentials: 'include', // This ensures cookies are sent
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
         }
       });
       

@@ -31,9 +31,7 @@ export async function GET() {
       sort: [{ field: 'facturaID', direction: 'desc' }]
     }).all();
 
-    console.log('Registros desde Airtable:', records.map(r => ({
-      id: r.id,
-      total: r.get('total'),
+    ,
       tipoTotal: typeof r.get('total'),
       fecha: r.get('CreationDate'),
       tipoFecha: typeof r.get('CreationDate')
@@ -54,7 +52,6 @@ export async function GET() {
         try {
           return JSON.parse(rawValue as string);
         } catch (e) {
-          console.log(`Unable to parse productofactura as JSON: ${rawValue}`);
           // If it's a string that's not valid JSON, just return it as is
           return rawValue;
         }
@@ -67,13 +64,7 @@ export async function GET() {
       datosbancarios: record.get('datosbancarios') as string || '',
     }));
 
-    console.log('Facturas procesadas:', invoices.map(i => ({
-      id: i.id,
-      total: i.total,
-      tipoTotal: typeof i.total,
-      fecha: i.creationDate,
-      tipoFecha: typeof i.creationDate
-    })));
+    ));
     
 
     return NextResponse.json({
@@ -85,7 +76,6 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error('GET error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido',
@@ -98,8 +88,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log('API Route: Received invoice data:', body);
-
     const table = getAirtableBase();
 
     const fields = {
@@ -126,7 +114,6 @@ export async function POST(request: Request) {
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
-    console.error('POST error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Airtable error',
@@ -168,7 +155,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
-    console.error('PUT error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error updating invoice',
@@ -191,7 +177,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
-    console.error('DELETE error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error deleting invoice',

@@ -6,7 +6,6 @@ export async function GET(req: NextRequest) {
     const invoices = await getIssuedInvoices();
     return NextResponse.json({ invoices });
   } catch (error) {
-    console.error('Error fetching invoices:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 } 
