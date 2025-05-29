@@ -1,3 +1,4 @@
+import Airtable from 'airtable';
 import { Invoice } from '@/lib/types'
 
 // Helper function to normalize dates that might have incorrect years
@@ -29,10 +30,19 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
   }
 })
 
-const AIRTABLE_API_KEY = requiredEnvVars.AIRTABLE_API_KEY
-const AIRTABLE_BASE_ID = requiredEnvVars.AIRTABLE_BASE_ID
-const AIRTABLE_API_URL = requiredEnvVars.AIRTABLE_API_URL
+const AIRTABLE_API_KEY = requiredEnvVars.AIRTABLE_API_KEY!
+const AIRTABLE_BASE_ID = requiredEnvVars.AIRTABLE_BASE_ID!
+const AIRTABLE_API_URL = requiredEnvVars.AIRTABLE_API_URL!
 const AIRTABLE_TABLE_NAME_RECIBIDAS = process.env.AIRTABLE_TABLE_NAME_RECIBIDAS;
+
+// Configurar Airtable
+Airtable.configure({ apiKey: AIRTABLE_API_KEY });
+const base = Airtable.base(AIRTABLE_BASE_ID);
+
+// Función para obtener la tabla de facturas emitidas
+export function getAirtableBase() {
+  return base('Facturas emitidas'); // Nombre de la tabla en Airtable
+}
 
 export async function getInvoices(): Promise<Invoice[]> {
   try {

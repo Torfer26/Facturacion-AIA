@@ -210,7 +210,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Link href="/facturas/emitidas" className="block">
           <Card className="h-full hover:shadow-md transition-shadow">
             <CardHeader>
@@ -248,6 +248,20 @@ export default function DashboardPage() {
               <p className="text-gray-500">Gestiona tus clientes</p>
               <p className="text-sm text-orange-600 mt-2">
                 {loadingStats ? "Cargando..." : `${stats?.clientes.total || 0} clientes`}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/empresa/perfil" className="block">
+          <Card className="h-full hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-indigo-600">Perfil de Empresa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">Configura tu empresa y datos</p>
+              <p className="text-sm text-indigo-600 mt-2">
+                Logo, datos bancarios, fiscales
               </p>
             </CardContent>
           </Card>

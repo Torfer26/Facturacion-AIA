@@ -64,8 +64,6 @@ export async function GET(
       datosbancarios: record.get('datosbancarios') as string || '',
     };
 
-    })
-
     return NextResponse.json({
       success: true,
       invoice,

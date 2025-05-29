@@ -81,13 +81,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const table = getAirtableBase();
 
+    console.log('🔍 DEBUGGING POST FACTURA:');
+    console.log('📦 Body completo recibido:', JSON.stringify(body, null, 2));
+    console.log('📦 Productos en body:', body.Productofactura);
+    console.log('📦 Productos en body (lowercase):', body.productofactura);
+    console.log('👤 Cliente nombre:', body.Nombrecliente);
+    console.log('👤 Cliente CIF:', body.CIFcliente);
+
     const fields = {
-      CreationDate: body.creationDate,
-      Fechavencimiento: body.fechavencimiento,
-      Nombrecliente: body.nombrecliente,
-      CIFcliente: body.cifcliente,
+      CreationDate: body.CreationDate || body.creationDate,
+      Fechavencimiento: body.Fechavencimiento || body.fechavencimiento,
+      Nombrecliente: body.Nombrecliente || body.nombrecliente,
+      CIFcliente: body.CIFcliente || body.cifcliente,
       direccioncliente: body.direccioncliente,
-      Productofactura: body.productofactura,
+      Productofactura: body.Productofactura || body.productofactura,
       cantidadproducto: body.cantidadproducto,
       subtotal: body.subtotal,
       tipoiva: body.tipoiva,
@@ -96,8 +103,12 @@ export async function POST(request: Request) {
       datosbancarios: body.datosbancarios,
     };
 
+    console.log('📝 Fields que se van a guardar en Airtable:', JSON.stringify(fields, null, 2));
+
     const created = await table.create([{ fields }]);
     const createdId = created[0].id;
+
+    console.log('✅ Factura creada con ID:', createdId);
 
     return NextResponse.json({
       success: true,
@@ -105,6 +116,7 @@ export async function POST(request: Request) {
       timestamp: getNormalizedTimestamp()
     });
   } catch (error) {
+    console.error('❌ Error creando factura:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown Airtable error',
