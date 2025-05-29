@@ -31,12 +31,6 @@ export async function GET() {
       sort: [{ field: 'facturaID', direction: 'desc' }]
     }).all();
 
-    ,
-      tipoTotal: typeof r.get('total'),
-      fecha: r.get('CreationDate'),
-      tipoFecha: typeof r.get('CreationDate')
-    })));
-
     const invoices = records.map(record => ({
       id: record.id,
       facturaID: record.get('facturaID') as string,
@@ -64,9 +58,6 @@ export async function GET() {
       datosbancarios: record.get('datosbancarios') as string || '',
     }));
 
-    ));
-    
-
     return NextResponse.json({
       success: true,
       invoices,
@@ -84,7 +75,7 @@ export async function GET() {
   }
 }
 
-// ✅ POST para crear una nueva factura emitida
+// POST para crear una nueva factura emitida
 export async function POST(request: Request) {
   try {
     const body = await request.json();
