@@ -60,8 +60,6 @@ export const getIssuedInvoices = async (): Promise<IssuedInvoice[]> => {
 
 export const createIssuedInvoice = async (invoice: CreateIssuedInvoiceDTO): Promise<IssuedInvoice> => {
   try {
-    );
-    
     // Try the main endpoint first
     const mainApiUrl = getApiUrl(API_PATH);
     const response = await fetch(mainApiUrl, {

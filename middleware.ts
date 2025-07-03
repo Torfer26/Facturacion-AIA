@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth/jwt';
+import { AntiSpam } from './lib/local/anti-spam';
 
 // List of paths that don't require authentication
 const publicPaths = [
@@ -30,6 +31,20 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   console.log(`[MIDDLEWARE V3] Checking path: ${pathname}`);
+  
+  // Anti-spam para APIs sensibles (solo en desarrollo)
+  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/dev/')) {
+    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    const verificacion = AntiSpam.verificar(ip, pathname);
+    
+    if (!verificacion.permitido) {
+      console.log(`[MIDDLEWARE V3] Anti-spam bloqueado: ${pathname} desde ${ip}`);
+      return NextResponse.json({
+        success: false,
+        error: verificacion.mensaje || 'Demasiadas peticiones'
+      }, { status: 429 });
+    }
+  }
   
   // Allow access to public paths
   if (isPublicPath(pathname)) {

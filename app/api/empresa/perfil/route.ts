@@ -97,8 +97,8 @@ export async function GET() {
         siguienteNumero: parseInt(record.get('SiguienteNumeroFactura') as string) || 1,
         digitos: parseInt(record.get('DigitosFactura') as string) || 4
       },
-      createdAt: record.createdTime,
-      updatedAt: record.createdTime
+      createdAt: record._rawJson.createdTime || new Date().toISOString(),
+      updatedAt: record._rawJson.createdTime || new Date().toISOString()
     };
 
     console.log('✅ Empresa procesada para frontend:', {
@@ -224,8 +224,8 @@ export async function POST(request: Request) {
             siguienteNumero: 1,
             digitos: 4
           },
-          createdAt: result.createdTime || new Date().toISOString(),
-          updatedAt: result.createdTime || new Date().toISOString()
+          createdAt: result._rawJson?.createdTime || new Date().toISOString(),
+          updatedAt: result._rawJson?.createdTime || new Date().toISOString()
         },
         message: existingRecords.length > 0 ? 'Perfil actualizado con campos básicos' : 'Perfil creado con campos básicos'
       });

@@ -5,8 +5,8 @@ import { AuthProvider } from '@/lib/hooks/useAuth'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Facturación AIA',
-  description: 'Aplicación para gestionar facturas',
+  title: 'AIA Automate - Facturación',
+  description: 'Plataforma de gestión de facturación empresarial automatizada',
 }
 
 export default function RootLayout({

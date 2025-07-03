@@ -1,3 +1,4 @@
+import React from 'react';
 import { NextResponse } from 'next/server';
 import { renderToStream } from '@react-pdf/renderer';
 import { FacturaPDF } from '@/lib/pdf/factura-template';
@@ -8,7 +9,7 @@ import Airtable from 'airtable';
 function getAirtableBase() {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
-  const tableName = process.env.AIRTABLE_TABLE_NAME_EMITIDAS;
+  const tableName = process.env.AIRTABLE_ISSUED_TABLE_NAME || process.env.AIRTABLE_TABLE_NAME_EMITIDAS || 'Facturas-emitidas';
 
   console.log('🔍 Verificando configuración de Airtable para PDF:');
   console.log('- API Key presente:', !!apiKey);
@@ -23,7 +24,7 @@ function getAirtableBase() {
     throw new Error('❌ Falta AIRTABLE_BASE_ID en las variables de entorno');
   }
   if (!tableName) {
-    throw new Error('❌ Falta AIRTABLE_TABLE_NAME_EMITIDAS en las variables de entorno. Necesitas agregar esta variable a tu archivo .env.local');
+    throw new Error('❌ Falta AIRTABLE_ISSUED_TABLE_NAME en las variables de entorno');
   }
 
   const base = new Airtable({ apiKey }).base(baseId);
@@ -57,8 +58,8 @@ async function getEmpresaConfig() {
     console.log('📊 Registros encontrados en ConfiguracionEmpresa:', records.length);
     
     if (records.length === 0) {
-      console.warn('⚠️ No hay configuración de empresa en Airtable');
-      console.warn('   Necesitas crear un registro en la tabla:', configTable);
+      console.warn('⚠️ No hay configuración de empresa en Airtable, usando valores por defecto');
+      console.warn('   Para personalizar: crear un registro en la tabla:', configTable);
       return null;
     }
 
@@ -108,13 +109,12 @@ async function getEmpresaConfig() {
     return empresaData;
     
   } catch (error) {
-    console.error('❌ Error obteniendo configuración de empresa:', error);
+    console.warn('⚠️ Error obteniendo configuración de empresa (usando valores por defecto):', error instanceof Error ? error.message : error);
     
-    // Log más detallado del error
-    if (error instanceof Error) {
+    // No mostrar stack trace completo en producción, solo en desarrollo
+    if (process.env.NODE_ENV === 'development' && error instanceof Error) {
       console.error('   Tipo de error:', error.name);
-      console.error('   Mensaje:', error.message);
-      console.error('   Stack:', error.stack);
+      console.error('   Mensaje completo:', error.message);
     }
     
     return null;
@@ -213,7 +213,7 @@ export async function GET(
 
     // Generar el PDF
     const stream = await renderToStream(
-      FacturaPDF({ factura, empresaInfo })
+      <FacturaPDF factura={factura} empresaInfo={empresaInfo} />
     );
 
     // Convertir el stream a buffer

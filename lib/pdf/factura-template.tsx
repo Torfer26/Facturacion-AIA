@@ -25,12 +25,12 @@ Font.register({
   ],
 });
 
-// Estilos para el PDF
+// Estilos para el PDF - Versión compacta
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 40,
+    padding: 25,
     fontFamily: 'Roboto',
     fontSize: 10,
   },
@@ -38,11 +38,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 30,
-    borderBottomWidth: 2,
+    marginBottom: 15,
+    borderBottomWidth: 1.5,
     borderBottomColor: '#3B82F6',
     borderBottomStyle: 'solid',
-    paddingBottom: 20,
+    paddingBottom: 12,
   },
   companySection: {
     flex: 1,
@@ -59,67 +59,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   companyName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 700,
     color: '#1F2937',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   companyInfo: {
     fontSize: 9,
     color: '#6B7280',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
   },
   invoiceInfo: {
     alignItems: 'flex-end',
   },
   invoiceTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 700,
     color: '#3B82F6',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   invoiceNumber: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 500,
     color: '#1F2937',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   invoiceDate: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#6B7280',
   },
   clientSection: {
-    marginBottom: 30,
+    marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 700,
     color: '#1F2937',
-    marginBottom: 10,
+    marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   clientInfo: {
     backgroundColor: '#F9FAFB',
-    padding: 15,
-    borderRadius: 5,
+    padding: 10,
+    borderRadius: 3,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderStyle: 'solid',
   },
   clientName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 500,
     color: '#1F2937',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   clientDetails: {
     fontSize: 9,
     color: '#6B7280',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
   },
   itemsSection: {
-    marginBottom: 30,
+    marginBottom: 15,
   },
   table: {
     display: 'table',
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     borderTopWidth: 0,
     backgroundColor: '#F3F4F6',
-    padding: 10,
+    padding: 6,
   },
   tableCol: {
     width: '25%',
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderLeftWidth: 0,
     borderTopWidth: 0,
-    padding: 10,
+    padding: 6,
   },
   tableCellHeader: {
     fontSize: 10,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   summary: {
-    marginTop: 20,
+    marginTop: 12,
     alignItems: 'flex-end',
   },
   summaryTable: {
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
-    paddingHorizontal: 10,
+    marginBottom: 3,
+    paddingHorizontal: 8,
   },
   summaryLabel: {
     fontSize: 10,
@@ -194,11 +194,11 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     backgroundColor: '#3B82F6',
-    borderRadius: 5,
+    borderRadius: 3,
   },
   totalLabel: {
     fontSize: 12,
@@ -211,43 +211,43 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   footer: {
-    marginTop: 40,
-    paddingTop: 20,
+    marginTop: 20,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     borderTopStyle: 'solid',
   },
   footerTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 700,
     color: '#1F2937',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   footerText: {
     fontSize: 9,
     color: '#6B7280',
-    lineHeight: 1.4,
-    marginBottom: 5,
+    lineHeight: 1.2,
+    marginBottom: 2,
   },
   paymentInfo: {
-    marginTop: 20,
+    marginTop: 10,
     backgroundColor: '#FEF3C7',
-    padding: 15,
-    borderRadius: 5,
+    padding: 8,
+    borderRadius: 3,
     borderWidth: 1,
     borderColor: '#F59E0B',
     borderStyle: 'solid',
   },
   paymentTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 700,
     color: '#92400E',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   paymentText: {
     fontSize: 9,
     color: '#92400E',
-    lineHeight: 1.4,
+    lineHeight: 1.2,
   },
 });
 
@@ -352,10 +352,10 @@ export const FacturaPDF: React.FC<FacturaPDFProps> = ({
             {empresaInfo.logo && (
               <View style={{ 
                 position: 'absolute',
-                top: 20,
-                right: 20,
-                width: 80,
-                height: 80,
+                top: 15,
+                right: 15,
+                width: 50,
+                height: 50,
                 justifyContent: 'center',
                 alignItems: 'center'
               }}>
@@ -385,8 +385,8 @@ export const FacturaPDF: React.FC<FacturaPDFProps> = ({
                       <Image
                         src={logoUrl}
                         style={{
-                          width: 80,
-                          height: 80,
+                          width: 50,
+                          height: 50,
                           objectFit: 'contain'
                         }}
                       />
@@ -395,14 +395,14 @@ export const FacturaPDF: React.FC<FacturaPDFProps> = ({
                     console.warn('⚠️ Error con logo de empresa:', error);
                     return (
                       <View style={{
-                        width: 80,
-                        height: 80,
+                        width: 50,
+                        height: 50,
                         backgroundColor: '#f0f0f0',
                         justifyContent: 'center',
                         alignItems: 'center',
                         border: '1px solid #ddd'
                       }}>
-                        <Text style={{ fontSize: 10, color: '#666' }}>LOGO</Text>
+                        <Text style={{ fontSize: 8, color: '#666' }}>LOGO</Text>
                       </View>
                     );
                   }
@@ -506,15 +506,9 @@ export const FacturaPDF: React.FC<FacturaPDFProps> = ({
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerTitle}>Condiciones de Pago</Text>
+          <Text style={styles.footerTitle}>Condiciones</Text>
           <Text style={styles.footerText}>
-            • El pago de esta factura debe realizarse antes de la fecha de vencimiento indicada.
-          </Text>
-          <Text style={styles.footerText}>
-            • Los pagos realizados fuera de plazo pueden estar sujetos a intereses de demora.
-          </Text>
-          <Text style={styles.footerText}>
-            • Esta factura se considera aceptada si no se reclama en un plazo de 8 días.
+            • Pago antes del vencimiento • Reclamaciones en 8 días • Esta factura se considera aceptada si no se reclama
           </Text>
         </View>
       </Page>

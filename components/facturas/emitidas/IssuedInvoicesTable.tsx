@@ -7,7 +7,6 @@ import { IssuedInvoice } from '@/lib/types/issuedInvoice';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, FileText, Trash } from 'lucide-react';
-import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 
 const columns: ColumnDef<IssuedInvoice>[] = [
@@ -54,17 +53,48 @@ const columns: ColumnDef<IssuedInvoice>[] = [
     id: 'actions',
     cell: ({ row }) => {
       const invoice = row.original;
+      
+      const handleViewPDF = () => {
+        // Abrir PDF en nueva ventana
+        window.open(`/api/facturas/emitidas/${invoice.id}/pdf?preview=true`, '_blank');
+      };
+      
+      const handleDownloadPDF = () => {
+        // Descargar PDF
+        window.open(`/api/facturas/emitidas/${invoice.id}/pdf`, '_blank');
+      };
+      
+      const handleDelete = () => {
+        if (confirm('¿Estás seguro de que quieres eliminar esta factura?')) {
+          // TODO: Implementar eliminación
+          console.log('Eliminar factura:', invoice.id);
+        }
+      };
+      
       return (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/facturas/emitidas/${invoice.id}`}>
-              <Eye className="h-4 w-4" />
-            </Link>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleViewPDF}
+            title="Ver PDF"
+          >
+            <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleDownloadPDF}
+            title="Descargar PDF"
+          >
             <FileText className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleDelete}
+            title="Eliminar factura"
+          >
             <Trash className="h-4 w-4" />
           </Button>
         </div>

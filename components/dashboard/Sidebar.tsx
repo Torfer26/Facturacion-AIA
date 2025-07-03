@@ -8,7 +8,10 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Key,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -20,9 +23,14 @@ interface SidebarProps {
 export default function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
+  };
+
+  const toggleUserMenu = () => {
+    setUserMenuOpen(!userMenuOpen);
   };
 
   const navigation = [
@@ -63,10 +71,8 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="px-6 py-6 border-b">
-            <Link href="/dashboard" className="flex items-center">
-              <span className="text-2xl font-bold">
-                <span className="text-blue-600">Fiscal</span>App
-              </span>
+            <Link href="/dashboard" className="flex items-center justify-center">
+              <img src="/images/logo-aia.png" alt="AIA Automate" className="w-15 h-15" />
             </Link>
           </div>
           
@@ -119,22 +125,52 @@ export default function Sidebar({ className }: SidebarProps) {
           
           {/* User menu */}
           <div className="px-4 py-4 border-t">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                  U
+            <div className="relative">
+              {/* User info header */}
+              <button
+                onClick={toggleUserMenu}
+                className="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                      U
+                    </div>
+                  </div>
+                  <div className="ml-3 text-left">
+                    <p className="text-sm font-medium text-gray-900">Usuario</p>
+                    <p className="text-xs text-gray-500">Administrador</p>
+                  </div>
                 </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Usuario</p>
-                <Link 
-                  href="/api/auth/signout" 
-                  className="text-xs font-medium text-gray-500 hover:text-gray-700 flex items-center mt-1"
-                >
-                  <LogOut className="mr-1 h-3 w-3" />
-                  Cerrar sesión
-                </Link>
-              </div>
+                {userMenuOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
+
+              {/* Dropdown menu */}
+              {userMenuOpen && (
+                <div className="mt-2 bg-white border border-gray-200 rounded-md shadow-lg py-1">
+                  <Link
+                    href="/configuracion/password"
+                    className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <Key className="mr-2 h-4 w-4" />
+                    Cambiar contraseña
+                  </Link>
+                  <hr className="my-1" />
+                  <Link
+                    href="/api/auth/logout"
+                    className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar sesión
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

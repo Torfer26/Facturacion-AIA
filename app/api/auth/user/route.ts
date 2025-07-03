@@ -28,8 +28,8 @@ export async function GET() {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
-        role: user.role
+        name: user.nombre,
+        role: user.rol
       },
     });
   } catch (error) {
