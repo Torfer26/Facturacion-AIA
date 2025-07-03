@@ -1,57 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { AuthService } from '@/lib/auth/auth-service';
 
 export async function GET(request: NextRequest) {
-  // Get token from Authorization header or X-Auth-Token or cookie
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader ? authHeader.replace('Bearer ', '') : 
-               request.headers.get('X-Auth-Token') || 
-               request.cookies.get('auth-token')?.value;
-  
-  // For testing: Accept a specific token pattern as valid
-  if (token && token.startsWith('backup-token-')) {
-    return NextResponse.json({ 
-      authenticated: true,
-      user: {
-        id: 'admin-1',
-        email: 'admin@facturas.com',
-        name: 'Administrador',
-        role: 'admin'
-      }
-    });
-  }
-  
-  // For testing: Accept manual test token
-  if (token === 'manual-test-token') {
-    return NextResponse.json({ 
-      authenticated: true,
-      user: {
-        id: 'test-1',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'user'
-      }
-    });
-  }
-  
-  // No token
-  if (!token) {
-    return NextResponse.json({ authenticated: false, error: 'No token provided' });
-  }
-  
   try {
-    // Verify the token
-    const user = await verifyToken(token);
+    // Obtener token de múltiples fuentes
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : 
+                 request.headers.get('X-Auth-Token') || 
+                 request.cookies.get('auth-token')?.value;
     
-    if (!user) {
-      return NextResponse.json({ authenticated: false, error: 'Invalid token' });
+    // Sin token
+    if (!token) {
+      return NextResponse.json({ 
+        success: false,
+        authenticated: false, 
+        error: 'No token provided' 
+      });
     }
     
-    return NextResponse.json({ authenticated: true, user });
-  } catch (error) {
+    // Verificar token con el sistema V3
+    const user = await AuthService.verifyToken(token);
+    
+    if (!user) {
+      return NextResponse.json({ 
+        success: false,
+        authenticated: false, 
+        error: 'Invalid token' 
+      });
+    }
+    
+    // Token válido
     return NextResponse.json({ 
-      authenticated: false, 
-      error: 'Invalid token'
+      success: true,
+      authenticated: true, 
+      user 
     });
+    
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return NextResponse.json({ 
+      success: false,
+      authenticated: false, 
+      error: 'Server error' 
+    }, { status: 500 });
   }
 } 

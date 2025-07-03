@@ -1,43 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { AuthService } from '@/lib/auth/auth-service';
+import { LoginSchema } from '@/lib/auth/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
     
-    // Test credentials
-    if (email === 'admin@facturas.com' && password === 'Admin123@Facturas2024!') {
-      const token = `test-token-${Date.now()}`;
-      
-      const response = NextResponse.json({
-        success: true,
-        token,
-        user: {
-          id: 'admin-1',
-          email: 'admin@facturas.com',
-          name: 'Administrador',
-          role: 'admin'
-        }
-      });
-      
-      // Set cookie
-      response.cookies.set('auth-token', token, {
-        httpOnly: true,
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        sameSite: 'lax'
-      });
-      
-      return response;
+    // Validar entrada con Zod
+    const validatedInput = LoginSchema.parse(body);
+    
+    // Intentar login con el sistema V3
+    const result = await AuthService.login(validatedInput);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: result.error || 'Credenciales inválidas' 
+        },
+        { status: 401 }
+      );
+    }
+    
+    // Login exitoso - configurar cookie y respuesta
+    const response = NextResponse.json({
+      success: true,
+      user: result.user,
+      token: result.token
+    });
+    
+    // Configurar cookie segura con el token
+    response.cookies.set('auth-token', result.token!, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 días
+      path: '/',
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Login API error:', error);
+    
+    // Error de validación de Zod
+    if (error instanceof Error && error.message.includes('validation')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Datos de entrada inválidos' 
+        },
+        { status: 400 }
+      );
     }
     
     return NextResponse.json(
-      { success: false, error: 'Credenciales inválidas' },
-      { status: 401 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Error del servidor' },
+      { 
+        success: false, 
+        error: 'Error interno del servidor' 
+      },
       { status: 500 }
     );
   }

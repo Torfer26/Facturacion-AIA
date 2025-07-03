@@ -22,22 +22,14 @@ export default function LoginPage() {
   
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [loginStatus, setLoginStatus] = useState<string>('');
-  const [debugInfo, setDebugInfo] = useState<string>('');
   
-  // Redirect if already authenticated - use a separate flag to prevent loops
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
-  
+  // Simple redirect after successful authentication - no loops
   useEffect(() => {
-    if (isAuthenticated && user && !redirectAttempted) {
-      setRedirectAttempted(true);
-      setDebugInfo('Authenticated as: ' + user.email + '. Redirecting...');
-      
-      // Use direct navigation after a delay
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1000);
+    if (isAuthenticated && user && !isLoading) {
+      // Simple redirect using router.replace to avoid history issues
+      router.replace('/dashboard');
     }
-  }, [isAuthenticated, user, redirectAttempted]);
+  }, [isAuthenticated, user, isLoading, router]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -78,60 +70,31 @@ export default function LoginPage() {
     // Attempt login
     try {
       setLoginStatus('Intentando iniciar sesión...');
-      setDebugInfo('Login attempt with: ' + formData.email);
       const success = await login(formData.email, formData.password);
       
-      setLoginStatus(success ? 'Inicio de sesión exitoso' : 'Falló el inicio de sesión');
-      setDebugInfo(success ? 'Login successful, waiting for redirect' : 'Login failed');
-      
       if (success) {
-        // Don't redirect here - let the useEffect handle it
-        // Still show a message
         setLoginStatus('Inicio de sesión exitoso. Redirigiendo...');
-        
-        // Force token to localStorage directly as a backup
-        try {
-          localStorage.setItem('auth-token', 'backup-token-' + Date.now());
-          setDebugInfo(prev => prev + ' | Token backup saved');
-        } catch (err) {
-          }
+        // The useEffect will handle the redirect
+      } else {
+        setLoginStatus('Error en el inicio de sesión');
       }
     } catch (err) {
       setLoginStatus('Error durante el inicio de sesión');
-      setDebugInfo('Login error: ' + (err instanceof Error ? err.message : String(err)));
+      console.error('Login error:', err);
     }
   };
   
-  // Function to check for localStorage
-  const checkLocalStorage = () => {
-    try {
-      const testValue = 'test-' + Date.now();
-      localStorage.setItem('test-storage', testValue);
-      const retrieved = localStorage.getItem('test-storage');
-      localStorage.removeItem('test-storage');
-      
-      if (retrieved === testValue) {
-        setDebugInfo(prev => prev + ' | localStorage works');
-      } else {
-        setDebugInfo(prev => prev + ' | localStorage test failed');
-      }
-    } catch (err) {
-      setDebugInfo(prev => prev + ' | localStorage error: ' + String(err));
-    }
-  };
-  
-  // Run localStorage check on mount
-  useEffect(() => {
-    checkLocalStorage();
-    
-    // Debug what's in localStorage already
-    try {
-      const token = localStorage.getItem('auth-token');
-      setDebugInfo(prev => prev + ' | Existing token: ' + (token ? 'Yes' : 'No'));
-    } catch (err) {
-      // Ignore
-    }
-  }, []);
+  // Show dashboard if already authenticated
+  if (isAuthenticated && user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Redirigiendo...</h2>
+          <p className="text-gray-500">Ya estás autenticado como {user.email}</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-100">
@@ -155,15 +118,6 @@ export default function LoginPage() {
             <div className="mb-4 rounded-md bg-blue-50 p-4">
               <div className="text-sm text-blue-700">
                 {loginStatus}
-              </div>
-            </div>
-          )}
-          
-          {/* Debug info for development */}
-          {debugInfo && (
-            <div className="mb-4 rounded-md bg-gray-100 p-2">
-              <div className="text-xs text-gray-700 font-mono break-all">
-                Debug: {debugInfo}
               </div>
             </div>
           )}
@@ -217,7 +171,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
                 {isLoading ? 'Accediendo...' : 'Acceder'}
               </button>
@@ -225,32 +179,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6">
-            <div className="relative">
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 text-gray-500">
-                  Credenciales de prueba: admin@facturas.com / Admin123@Facturas2024!
-                </span>
-              </div>
+            <div className="text-center text-sm text-gray-600">
+              Credenciales de prueba: admin@tuempresa.com / TuPasswordAdmin123@
             </div>
-          </div>
-          
-          {/* Debug button - for development only */}
-          <div className="mt-4">
-            <button 
-              type="button"
-              onClick={() => {
-                try {
-                  localStorage.setItem('auth-token', 'manual-test-token');
-                  setDebugInfo('Manual token set');
-                  setTimeout(() => window.location.href = '/dashboard', 500);
-                } catch (err) {
-                  setDebugInfo('Error setting manual token: ' + String(err));
-                }
-              }}
-              className="w-full text-xs text-gray-500 hover:text-gray-700 text-center py-2"
-            >
-              Debug: Forzar Token
-            </button>
           </div>
         </div>
       </div>

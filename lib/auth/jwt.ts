@@ -1,6 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { SafeUser } from './types';
-import logger from '@/lib/logger/server';
+import { JWTPayload, SafeUser } from './types';
 
 // Obtener la clave secreta de forma segura
 function getJwtSecret(): Uint8Array {
@@ -18,11 +17,13 @@ export async function createToken(user: SafeUser): Promise<string> {
   try {
     const secret = getJwtSecret();
     
-    const token = await new SignJWT({
+    const payload: JWTPayload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
-    })
+      rol: user.rol,
+    };
+    
+    const token = await new SignJWT(payload)
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d') // 7 días
@@ -32,10 +33,12 @@ export async function createToken(user: SafeUser): Promise<string> {
     
     return token;
   } catch (error) {
-    logger.error('Error creating JWT token:', error);
+    console.error('Error creating JWT token:', error);
     throw new Error('Error al crear el token de autenticación');
   }
-}/**
+}
+
+/**
  * Verificar un token JWT
  */
 export async function verifyToken(token: string): Promise<SafeUser | null> {
@@ -48,22 +51,37 @@ export async function verifyToken(token: string): Promise<SafeUser | null> {
     });
     
     // Validar que el payload tenga los campos necesarios
-    if (!payload.userId || !payload.email || !payload.role) {
-      logger.warn('Invalid JWT payload structure');
+    if (!payload.userId || !payload.email || !payload.rol) {
+      console.warn('Invalid JWT payload structure');
       return null;
     }
     
     return {
       id: payload.userId as string,
       email: payload.email as string,
-      name: '', // Se obtendrá de la base de datos si es necesario
-      role: payload.role as 'ADMIN' | 'USER' | 'VIEWER',
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      nombre: '', // Se obtendrá de Airtable si es necesario
+      rol: payload.rol as 'ADMIN' | 'USER' | 'VIEWER',
+      activo: true,
+      fechaCreacion: new Date(),
+      ultimaConexion: new Date(),
     };
   } catch (error) {
-    logger.warn('Invalid JWT token:', error);
+    console.warn('Invalid JWT token:', error);
     return null;
   }
 }
+
+/**
+ * Obtener payload sin verificar (solo para debugging)
+ */
+export function decodeTokenUnsafe(token: string): JWTPayload | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch (error) {
+    return null;
+  }
+} 

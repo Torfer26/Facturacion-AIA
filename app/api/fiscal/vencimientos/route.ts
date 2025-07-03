@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getVencimientosFiscales } from '@/lib/services/airtable-fiscal'
 import { verifyToken } from '@/lib/auth'
-import { verifyToken as verifyJWT } from '@/lib/auth-v2/jwt'
+
 
 // Helper function to ensure date is current year
 function getNormalizedTimestamp(): string {
@@ -32,7 +32,7 @@ async function checkAuth(request: Request) {
   if (!user) {
     // Try V2 system (JWT)
     try {
-      const jwtUser = await verifyJWT(token);
+      const jwtUser = await verifyToken(token);
       if (jwtUser) {
         user = {
           id: jwtUser.id,

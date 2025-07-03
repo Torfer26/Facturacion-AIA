@@ -1,27 +1,27 @@
 import bcrypt from 'bcryptjs';
-import logger from '@/lib/logger/server';
 
 /**
  * Hash de contraseña con bcrypt
+ * Usa saltRounds 12 para mayor seguridad
  */
 export async function hashPassword(password: string): Promise<string> {
   try {
     const saltRounds = 12; // Más seguro que el default de 10
     return await bcrypt.hash(password, saltRounds);
   } catch (error) {
-    logger.error('Error hashing password:', error);
+    console.error('Error hashing password:', error);
     throw new Error('Error al procesar la contraseña');
   }
 }
 
 /**
- * Verificar contraseña
+ * Verificar contraseña contra hash
  */
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
   try {
     return await bcrypt.compare(password, hashedPassword);
   } catch (error) {
-    logger.error('Error verifying password:', error);
+    console.error('Error verifying password:', error);
     return false;
   }
 }
@@ -46,4 +46,4 @@ export function generateSecurePassword(length: number = 16): string {
   
   // Mezclar los caracteres
   return password.split('').sort(() => Math.random() - 0.5).join('');
-}
+} 

@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { verifyToken } from './lib/auth';
-import { verifyToken as verifyJWT } from './lib/auth-v2/jwt-edge';
+import { verifyToken } from './lib/auth/jwt';
 
 // List of paths that don't require authentication
 const publicPaths = [
   '/',
   '/login',
-  '/login-v2',
   '/test-auth',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/check',
-  '/api/v2/auth/login',
-  '/api/v2/auth/logout',
   '/_next',
   '/favicon.ico',
   '/.well-known',
@@ -33,29 +29,25 @@ const isPublicPath = (path: string) => {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log('Middleware - checking path:', pathname);
+  console.log(`[MIDDLEWARE V3] Checking path: ${pathname}`);
   
   // Allow access to public paths
   if (isPublicPath(pathname)) {
-    console.log('Middleware - public path, allowing access');
+    console.log(`[MIDDLEWARE V3] Public path allowed: ${pathname}`);
     return NextResponse.next();
   }
   
-  console.log('Middleware - protected path, checking auth');
+  console.log(`[MIDDLEWARE V3] Protected path, checking auth: ${pathname}`);
   
   // Get token from Authorization header or from the cookie
   const token = request.headers.get('Authorization')?.split(' ')[1] || 
                 request.cookies.get('auth-token')?.value;
   
-  // Also check localStorage via a custom header that might be set by the client
-  const authHeader = request.headers.get('X-Auth-Token');
-  const finalToken = token || authHeader;
-  
-  console.log('Middleware - token exists:', !!finalToken);
+  console.log(`[MIDDLEWARE V3] Token present: ${!!token}`);
   
   // If there's no token and this is an API route, return 401
-  if (!finalToken && pathname.startsWith('/api/')) {
-    console.log('Middleware - API route with no token, returning 401');
+  if (!token && pathname.startsWith('/api/')) {
+    console.log(`[MIDDLEWARE V3] API route with no token, returning 401`);
     return NextResponse.json(
       { success: false, error: 'Unauthorized' }, 
       { status: 401 }
@@ -63,8 +55,8 @@ export async function middleware(request: NextRequest) {
   }
   
   // If there's no token and this is a page route, redirect to login
-  if (!finalToken) {
-    console.log('Middleware - page route with no token, redirecting to login');
+  if (!token) {
+    console.log(`[MIDDLEWARE V3] Page route with no token, redirecting to login`);
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('from', pathname);
@@ -72,31 +64,14 @@ export async function middleware(request: NextRequest) {
   }
   
   try {
-    // Try to verify token with both systems
-    let user = await verifyToken(finalToken); // V1 system
+    // Verify token with V3 system
+    const user = await verifyToken(token);
     
-    if (!user) {
-      // Try V2 system (JWT)
-      try {
-        const jwtUser = await verifyJWT(finalToken);
-        if (jwtUser) {
-          user = {
-            id: jwtUser.id,
-            email: jwtUser.email,
-            name: jwtUser.name || jwtUser.email,
-            role: jwtUser.role.toLowerCase()
-          };
-        }
-      } catch (error) {
-        // JWT verification failed, user remains null
-      }
-    }
-    
-    console.log('Middleware - token verification result:', !!user);
+    console.log(`[MIDDLEWARE V3] Token verification result: ${!!user}`);
     
     // If invalid token and this is an API route, return 401
     if (!user && pathname.startsWith('/api/')) {
-      console.log('Middleware - API route with invalid token, returning 401');
+      console.log(`[MIDDLEWARE V3] API route with invalid token, returning 401`);
       return NextResponse.json(
         { success: false, error: 'Invalid token' }, 
         { status: 401 }
@@ -105,17 +80,18 @@ export async function middleware(request: NextRequest) {
     
     // If invalid token and this is a page route, redirect to login
     if (!user) {
-      console.log('Middleware - page route with invalid token, redirecting to login');
+      console.log(`[MIDDLEWARE V3] Page route with invalid token, redirecting to login`);
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
     
     // Valid token, allow the request and add user to headers
-    console.log('Middleware - valid token, allowing access');
+    console.log(`[MIDDLEWARE V3] Valid token, allowing access for user: ${user.email}`);
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', user.id);
-    requestHeaders.set('x-user-role', user.role);
+    requestHeaders.set('x-user-email', user.email);
+    requestHeaders.set('x-user-rol', user.rol);
     
     return NextResponse.next({
       request: {
@@ -123,7 +99,7 @@ export async function middleware(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Middleware - error processing token:', error);
+    console.error('[MIDDLEWARE V3] Error processing token:', error);
     
     // Error processing token, redirect to login
     if (pathname.startsWith('/api/')) {

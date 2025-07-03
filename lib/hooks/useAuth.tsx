@@ -1,14 +1,17 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, createElement } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Types
+// Types - importados del sistema V3
 type User = {
   id: string;
   email: string;
-  name: string;
-  role: string;
+  nombre: string;
+  rol: 'ADMIN' | 'USER' | 'VIEWER';
+  activo: boolean;
+  fechaCreacion?: Date;
+  ultimaConexion?: Date;
 };
 
 type AuthContextType = {
@@ -67,7 +70,8 @@ const safeStorage = {
       const value = localStorage.getItem(key);
       if (value) return value;
     } catch (error) {
-      }
+      console.warn('localStorage not available, falling back to cookies');
+    }
     
     // Fall back to cookies
     return cookies.get(key);
@@ -82,14 +86,16 @@ const safeStorage = {
       localStorage.setItem(key, value);
       success = true;
     } catch (error) {
-      }
+      console.warn('localStorage not available');
+    }
     
     // Also set cookie as backup
     try {
       cookies.set(key, value);
       success = true;
     } catch (error) {
-      }
+      console.warn('Cookies not available');
+    }
     
     return success;
   },
@@ -103,14 +109,16 @@ const safeStorage = {
       localStorage.removeItem(key);
       success = true;
     } catch (error) {
-      }
+      console.warn('localStorage not available');
+    }
     
     // Also remove cookie
     try {
       cookies.remove(key);
       success = true;
     } catch (error) {
-      }
+      console.warn('Cookies not available');
+    }
     
     return success;
   }
@@ -149,7 +157,7 @@ const addAuthHeaderToFetch = (originalFetch: typeof fetch): typeof fetch => {
   };
 };
 
-// Provider component using regular function instead of JSX
+// Provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.authenticated && data.user) {
+          if (data.success && data.authenticated && data.user) {
             setUser(data.user);
           } else {
             safeStorage.removeItem(TOKEN_KEY);
@@ -196,6 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           safeStorage.removeItem(TOKEN_KEY);
         }
       } catch (err) {
+        console.error('Auth check failed:', err);
         safeStorage.removeItem(TOKEN_KEY);
       } finally {
         setIsLoading(false);
@@ -219,14 +228,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       const data = await response.json();
-      if (!response.ok) {
+      
+      if (!response.ok || !data.success) {
         const errorMsg = data.error || 'Error en el inicio de sesión';
-        setError(errorMsg);
-        return false;
-      }
-
-      if (!data.success) {
-        const errorMsg = data.error || 'Credenciales inválidas';
         setError(errorMsg);
         return false;
       }
@@ -245,19 +249,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setUser(data.user);
-      // For testing: Create a mock user if API doesn't return one
-      if (!data.user && email === 'admin@facturas.com') {
-        const mockUser = {
-          id: 'admin-1',
-          email: 'admin@facturas.com',
-          name: 'Administrador',
-          role: 'admin'
-        };
-        setUser(mockUser);
-      }
-      
       return true;
     } catch (err) {
+      console.error('Login error:', err);
       setError('Error en el servidor, inténtelo de nuevo');
       return false;
     } finally {
@@ -270,8 +264,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      } catch (err) {
-      } finally {
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
       safeStorage.removeItem(TOKEN_KEY);
       setUser(null);
       setIsLoading(false);
@@ -279,20 +274,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Create the context value
   const contextValue = {
     user,
     isLoading,
     isAuthenticated: !!user,
     login,
     logout,
-    error
+    error,
   };
 
-  // Use createElement instead of JSX
-  return createElement(
-    AuthContext.Provider,
-    { value: contextValue },
-    children
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
   );
 } 

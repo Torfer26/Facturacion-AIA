@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getInvoices } from '@/lib/services/airtable'
 import Airtable from 'airtable'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { verifyToken as verifyJWT } from '@/lib/auth-v2/jwt'
 import { z } from 'zod'
 import { Invoice } from '@/lib/types'
 
@@ -48,7 +47,7 @@ async function checkAuth(request: Request) {
   if (!user) {
     // Try V2 system (JWT)
     try {
-      const jwtUser = await verifyJWT(token);
+      const jwtUser = await verifyToken(token);
       if (jwtUser) {
         user = {
           id: jwtUser.id,
