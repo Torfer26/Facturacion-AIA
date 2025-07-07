@@ -144,5 +144,5 @@ export async function uploadInvoice(file: File) {
     throw new Error(data.error || 'Error al subir el archivo');
   }
 
-  return data.file;
-} 
+  return data;
+}
