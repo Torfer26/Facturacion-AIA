@@ -103,7 +103,6 @@ AIRTABLE_TABLE_CONFIGURACION=ConfiguracionEmpresa
 ### **Tabla Airtable**
 - **Nombre**: `ConfiguracionEmpresa`
 - **Campos**: 20+ campos para datos completos de empresa
-- **Documentación**: `AIRTABLE_CONFIGURACION_EMPRESA.md`
 
 ## 🎯 **Funcionalidades Nuevas**
 
@@ -194,4 +193,3 @@ Ahora tu aplicación:
 - ✅ **Soporta logos personalizados** en facturas
 - ✅ **Tiene interfaz completa** de configuración
 
-**Siguiente paso:** Configura tu tabla en Airtable siguiendo `AIRTABLE_CONFIGURACION_EMPRESA.md` 
