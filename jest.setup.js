@@ -17,6 +17,7 @@ jest.mock('next/navigation', () => ({
   useSearchParams() {
     return new URLSearchParams()
   },
+  redirect: jest.fn(),
 }))
 
 // Mock next-auth
