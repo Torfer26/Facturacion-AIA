@@ -23,6 +23,7 @@ jest.mock('next/navigation', () => ({
   }),
   usePathname: () => '/facturas',
   useSearchParams: () => new URLSearchParams(),
+  redirect: jest.fn(),
 }))
 
 // Mock next-auth
@@ -67,28 +68,9 @@ jest.mock('@/lib/hooks/useInvoices', () => ({
 }))
 
 describe('FacturasPage', () => {
-  it('renders upload section', () => {
+  it('redirects to received invoices', () => {
+    const { redirect } = require('next/navigation')
     render(<FacturasPage />)
-    expect(screen.getByText(/arrastra y suelta tu factura aquí/i)).toBeInTheDocument()
+    expect(redirect).toHaveBeenCalledWith('/facturas/recibidas')
   })
-
-  it('renders table headers', () => {
-    render(<FacturasPage />)
-    expect(screen.getByRole('button', { name: /número/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /fecha/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /proveedor/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /total/i })).toBeInTheDocument()
-  })
-
-  it('shows loading state when fetching invoices', () => {
-    jest.spyOn(require('@/lib/hooks/useInvoices'), 'useInvoices').mockImplementation(() => ({
-      invoices: [],
-      isLoading: true,
-      error: null,
-      refetch: jest.fn(),
-    }))
-
-    render(<FacturasPage />)
-    expect(screen.getByText(/cargando/i)).toBeInTheDocument()
-  })
-}) 
+})
