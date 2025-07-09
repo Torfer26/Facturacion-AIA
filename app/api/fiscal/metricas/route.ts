@@ -83,13 +83,13 @@ export async function GET(request: Request) {
 
     return createSuccessResponse(
       { 
-        metricas,
-        detalles: {
-          modelos303Count: modelos303.length,
-          modelos111Count: modelos111.length,
-          vencimientosCount: vencimientos.length,
-          configuracionExiste: !!configuracion,
-          ejercicioActual
+      metricas,
+      detalles: {
+        modelos303Count: modelos303.length,
+        modelos111Count: modelos111.length,
+        vencimientosCount: vencimientos.length,
+        configuracionExiste: !!configuracion,
+        ejercicioActual
         }
       }
     );

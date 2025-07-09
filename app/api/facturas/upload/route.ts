@@ -209,10 +209,10 @@ export async function POST(request: NextRequest) {
         console.warn(`[UPLOAD] ⚠️ No se pudo iniciar el procesamiento automático:`, processingResult.message);
         
         // Aún así devolver éxito del upload, pero sin procesamiento
-        return NextResponse.json({
-          success: true,
-          fileId: response.data.id,
-          webViewLink: response.data.webViewLink,
+    return NextResponse.json({
+      success: true,
+      fileId: response.data.id,
+      webViewLink: response.data.webViewLink,
           fileName: fileName,
           uploadedBy: {
             id: user.id,
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
           error: processingError instanceof Error ? processingError.message : 'Error desconocido'
         },
         warning: 'Archivo subido pero el procesamiento automático falló. Podrás procesarlo manualmente.'
-      })
+    })
     }
 
   } catch (error) {

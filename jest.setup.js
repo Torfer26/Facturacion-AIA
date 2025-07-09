@@ -8,12 +8,12 @@ window.location = { href: '', assign: jest.fn(), reload: jest.fn() };
 // Mock para next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
+      push: jest.fn(),
+      replace: jest.fn(),
     back: jest.fn(),
     forward: jest.fn(),
     refresh: jest.fn(),
-    prefetch: jest.fn(),
+      prefetch: jest.fn(),
   }),
   usePathname: () => '/test-path',
   useSearchParams: () => new URLSearchParams(),

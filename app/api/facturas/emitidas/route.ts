@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     logDataAccess(user, 'GET', 'facturas-emitidas');
 
     const table = getAirtableBase();
-    
+
     // Aplicar filtros según el rol del usuario
     const userFilter = createUserFilter(user);
     const selectOptions = {

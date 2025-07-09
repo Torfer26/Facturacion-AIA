@@ -118,9 +118,9 @@ export default function ResetPasswordConfirmPage() {
 
       if (data.success) {
         setSuccess(true);
-              setTimeout(() => {
+        setTimeout(() => {
         router.push('/');
-      }, 3000);
+        }, 3000);
       } else {
         setError(data.error || 'Error al restablecer la contraseña');
       }
