@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
         invoiceId: response.data.id!, // Usar el ID del archivo como invoice ID temporal
         fileUrl: fileUrl,
         empresaId: user.id, // Usar el ID del usuario como empresa ID
+        userEmail: user.email, // 👤 Añadir email del usuario
         tipo: tipoFactura
       });
 

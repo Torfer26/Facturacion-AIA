@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
     // Obtener y validar los datos
     const data = await req.json() as WebhookResponse & {
       tipo?: 'EMITIDA' | 'RECIBIDA';
+      userEmail?: string; // 👤 UserEmail viene directamente del webhook de n8n
       extractedData?: {
         customerName?: string;
         supplierName?: string;
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
           'InternalID': data.invoiceId,
           // Añadir información del usuario si está disponible
           ...(data.empresaId && { 'UserID': data.empresaId }),
-          ...(extracted.userEmail && { 'UserEmail': extracted.userEmail })
+          ...(data.userEmail && { 'UserEmail': data.userEmail })
         };
 
         console.log('[WEBHOOK] Datos a guardar en Airtable:', JSON.stringify(invoiceData, null, 2));

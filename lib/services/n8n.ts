@@ -6,6 +6,7 @@ export interface N8nProcessInvoiceParams {
   invoiceId: string;
   fileUrl: string;
   empresaId: string;
+  userEmail: string;
   tipo: 'EMITIDA' | 'RECIBIDA';
 }
 
@@ -22,6 +23,7 @@ export async function requestInvoiceProcessing({
   invoiceId,
   fileUrl,
   empresaId,
+  userEmail,
   tipo
 }: N8nProcessInvoiceParams): Promise<N8nProcessResponse> {
   try {
@@ -46,6 +48,7 @@ export async function requestInvoiceProcessing({
       invoiceId,
       fileUrl,
       empresaId,
+      userEmail,
       tipo,
       timestamp: new Date().toISOString(),
     };
