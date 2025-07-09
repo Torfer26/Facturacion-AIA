@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth/jwt';
-import { AntiSpam } from './lib/local/anti-spam';
+import { applySecurityHeaders, applyCorsHeaders } from './lib/security/headers';
+import { rateLimiter } from './lib/security/rateLimiter';
 
 // List of paths that don't require authentication
 const publicPaths = [
@@ -11,67 +12,96 @@ const publicPaths = [
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/check',
+  '/api/auth/reset-password',
+  '/auth/reset-password',
   '/_next',
   '/favicon.ico',
   '/.well-known',
 ];
 
+// Pre-compile regex patterns for better performance
+const staticFileRegex = /\.(jpg|jpeg|png|gif|svg|css|js|ico|woff|woff2|ttf|eot)$/i;
+const nextStaticRegex = /\/_next\//;
+const wellKnownRegex = /\/\.well-known\//;
+
 // Check if a path matches any of the public paths
-const isPublicPath = (path: string) => {
+const isPublicPath = (path: string): boolean => {
+  // Fast checks first
+  if (staticFileRegex.test(path) || nextStaticRegex.test(path) || wellKnownRegex.test(path)) {
+    return true;
+  }
+  
+  // Check exact matches and prefixes
   return publicPaths.some(publicPath => 
-    path === publicPath || 
-    path.startsWith(`${publicPath}/`) ||
-    path.match(/\.(jpg|png|svg|css|js)$/i) ||
-    path.includes('_next') ||
-    path.includes('.well-known')
+    path === publicPath || path.startsWith(`${publicPath}/`)
   );
 };
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log(`[MIDDLEWARE V3] Checking path: ${pathname}`);
+  // Only log in development mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[MIDDLEWARE] ${pathname}`);
+  }
   
-  // Anti-spam para APIs sensibles (solo en desarrollo)
-  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/api/dev/')) {
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
-    const verificacion = AntiSpam.verificar(ip, pathname);
+  // Rate limiting para todas las APIs
+  if (pathname.startsWith('/api/')) {
+    const limitCheck = rateLimiter.checkLimit(request);
     
-    if (!verificacion.permitido) {
-      console.log(`[MIDDLEWARE V3] Anti-spam bloqueado: ${pathname} desde ${ip}`);
-      return NextResponse.json({
+    if (!limitCheck.allowed) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[MIDDLEWARE] Rate limit exceeded: ${pathname}`);
+      }
+      
+      const response = NextResponse.json({
         success: false,
-        error: verificacion.mensaje || 'Demasiadas peticiones'
+        error: limitCheck.message || 'Demasiadas peticiones'
       }, { status: 429 });
+      
+      // Añadir headers informativos sobre rate limiting
+      response.headers.set('X-RateLimit-Limit', '60');
+      response.headers.set('X-RateLimit-Remaining', '0');
+      if (limitCheck.resetTime) {
+        response.headers.set('X-RateLimit-Reset', Math.ceil(limitCheck.resetTime / 1000).toString());
+        response.headers.set('Retry-After', Math.ceil((limitCheck.resetTime - Date.now()) / 1000).toString());
+      }
+      
+      // Aplicar headers de seguridad al response de rate limit
+      const secureResponse = applySecurityHeaders(response, 'api');
+      return applyCorsHeaders(secureResponse, request.headers.get('origin'));
     }
   }
   
   // Allow access to public paths
   if (isPublicPath(pathname)) {
-    console.log(`[MIDDLEWARE V3] Public path allowed: ${pathname}`);
-    return NextResponse.next();
+    const response = NextResponse.next();
+    
+    // Aplicar headers de seguridad según el tipo de ruta
+    const headerType = pathname.startsWith('/api/auth/') ? 'auth' : 
+                      pathname.startsWith('/api/') ? 'api' : 'page';
+    
+    const secureResponse = applySecurityHeaders(response, headerType);
+    return applyCorsHeaders(secureResponse, request.headers.get('origin'));
   }
-  
-  console.log(`[MIDDLEWARE V3] Protected path, checking auth: ${pathname}`);
   
   // Get token from Authorization header or from the cookie
   const token = request.headers.get('Authorization')?.split(' ')[1] || 
                 request.cookies.get('auth-token')?.value;
   
-  console.log(`[MIDDLEWARE V3] Token present: ${!!token}`);
-  
   // If there's no token and this is an API route, return 401
   if (!token && pathname.startsWith('/api/')) {
-    console.log(`[MIDDLEWARE V3] API route with no token, returning 401`);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: false, error: 'Unauthorized' }, 
       { status: 401 }
     );
+    
+    const secureResponse = applySecurityHeaders(response, 'auth');
+    return applyCorsHeaders(secureResponse, request.headers.get('origin'));
   }
   
   // If there's no token and this is a page route, redirect to login
   if (!token) {
-    console.log(`[MIDDLEWARE V3] Page route with no token, redirecting to login`);
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('from', pathname);
@@ -79,14 +109,11 @@ export async function middleware(request: NextRequest) {
   }
   
   try {
-    // Verify token with V3 system
+    // Verify token
     const user = await verifyToken(token);
-    
-    console.log(`[MIDDLEWARE V3] Token verification result: ${!!user}`);
     
     // If invalid token and this is an API route, return 401
     if (!user && pathname.startsWith('/api/')) {
-      console.log(`[MIDDLEWARE V3] API route with invalid token, returning 401`);
       return NextResponse.json(
         { success: false, error: 'Invalid token' }, 
         { status: 401 }
@@ -95,26 +122,33 @@ export async function middleware(request: NextRequest) {
     
     // If invalid token and this is a page route, redirect to login
     if (!user) {
-      console.log(`[MIDDLEWARE V3] Page route with invalid token, redirecting to login`);
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
     
     // Valid token, allow the request and add user to headers
-    console.log(`[MIDDLEWARE V3] Valid token, allowing access for user: ${user.email}`);
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', user.id);
     requestHeaders.set('x-user-email', user.email);
     requestHeaders.set('x-user-rol', user.rol);
     
-    return NextResponse.next({
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
+    
+    // Aplicar headers de seguridad
+    const headerType = pathname.startsWith('/api/auth/') ? 'auth' : 
+                      pathname.startsWith('/api/') ? 'api' : 'page';
+    
+    const secureResponse = applySecurityHeaders(response, headerType);
+    return applyCorsHeaders(secureResponse, request.headers.get('origin'));
   } catch (error) {
-    console.error('[MIDDLEWARE V3] Error processing token:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[MIDDLEWARE] Error processing token:', error);
+    }
     
     // Error processing token, redirect to login
     if (pathname.startsWith('/api/')) {

@@ -1,40 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findUserByEmail, updateUserPassword } from '@/lib/auth/airtable-service';
+import { findUserByEmail } from '@/lib/auth/airtable-service';
+import { resetTokenService } from '@/lib/services/resetTokenService';
+import { emailService } from '@/lib/services/emailService';
 import { z } from 'zod';
 
 // Schema de validación para reset de contraseña
 const resetPasswordSchema = z.object({
   email: z.string().email('Email inválido')
 });
-
-/**
- * Generar contraseña aleatoria segura
- */
-function generateSecurePassword(): string {
-  const length = 12;
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  const symbols = '@$!%*?&';
-  
-  const allChars = uppercase + lowercase + numbers + symbols;
-  
-  let password = '';
-  
-  // Asegurar que tenga al menos uno de cada tipo
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += symbols[Math.floor(Math.random() * symbols.length)];
-  
-  // Completar el resto de la longitud
-  for (let i = 4; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
-  }
-  
-  // Mezclar la contraseña
-  return password.split('').sort(() => Math.random() - 0.5).join('');
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,74 +20,96 @@ export async function POST(request: NextRequest) {
     // Buscar usuario por email
     const user = await findUserByEmail(validatedData.email);
     
+    // IMPORTANTE: Siempre devolver la misma respuesta por seguridad
+    // No revelamos si el usuario existe o no
+    const standardResponse = {
+      success: true,
+      message: 'Si el email existe en nuestro sistema, recibirás un correo con instrucciones para restablecer tu contraseña en los próximos minutos.'
+    };
+
     if (!user) {
-      // Por seguridad, no revelamos si el usuario existe o no
       console.log('[RESET PASSWORD] Usuario no encontrado:', validatedData.email);
-      return NextResponse.json({
-        success: true,
-        message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
-      });
+      return NextResponse.json(standardResponse);
     }
 
     if (!user.activo) {
       console.log('[RESET PASSWORD] Usuario inactivo:', validatedData.email);
-      return NextResponse.json({
-        success: true,
-        message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
-      });
+      return NextResponse.json(standardResponse);
     }
 
-    // Generar nueva contraseña temporal
-    const newPassword = generateSecurePassword();
-    console.log('[RESET PASSWORD] Nueva contraseña generada para:', validatedData.email);
+    try {
+      // Generar token seguro de reset
+      const tokenData = await resetTokenService.generateResetToken(user.id, user.email);
+      
+      console.log('[RESET PASSWORD] Token seguro generado para:', validatedData.email);
 
-    // Actualizar contraseña en la base de datos
-    const success = await updateUserPassword(user.id, newPassword);
+      // Intentar enviar email con el token
+      const emailSent = await emailService.sendPasswordResetEmail(user.email, tokenData.token);
 
-    if (!success) {
-      console.error('[RESET PASSWORD] Error al actualizar contraseña para:', validatedData.email);
+      if (!emailSent) {
+        console.error('[RESET PASSWORD] Error al enviar email para:', validatedData.email);
+        
+        // En desarrollo, loggear el token para testing y generar URL
+        if (process.env.NODE_ENV === 'development') {
+          const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password/confirm?token=${tokenData.token}`;
+          
+          console.log('='.repeat(80));
+          console.log('🔐 EMAIL NO CONFIGURADO - TOKEN DE RESET GENERADO:');
+          console.log(`👤 Usuario: ${user.email}`);
+          console.log(`🔗 URL completa:`);
+          console.log(`   ${resetUrl}`);
+          console.log(`⏱️  Expira: ${tokenData.expiresAt.toLocaleString()}`);
+          console.log('='.repeat(80));
+          console.log('💡 CONFIGURAR EMAIL SMTP PARA PRODUCCIÓN');
+          console.log('   Ver ENV_EJEMPLO.md para instrucciones');
+          console.log('='.repeat(80));
+        }
+        
+        // En desarrollo, incluir URL en respuesta para testing
+        const responseData = {
+          ...standardResponse,
+          ...(process.env.NODE_ENV === 'development' && {
+            dev_info: {
+              email: user.email,
+              message: '⚠️ Email no configurado. Ver consola del servidor para URL de reset.',
+              reset_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password/confirm?token=${tokenData.token}`,
+              expires_at: tokenData.expiresAt.toISOString()
+            }
+          })
+        };
+        
+        return NextResponse.json(responseData);
+      }
+
+      console.log('[RESET PASSWORD] Email enviado exitosamente a:', validatedData.email);
+
+      // En desarrollo, incluir información adicional para testing
+      const responseData = {
+        ...standardResponse,
+        ...(process.env.NODE_ENV === 'development' && {
+          dev_info: {
+            email: user.email,
+            token_generated: true,
+            expires_at: tokenData.expiresAt.toISOString(),
+            message: 'Token generado - verifica tu email'
+          }
+        })
+      };
+
+      return NextResponse.json(responseData);
+
+    } catch (tokenError) {
+      console.error('[RESET PASSWORD] Error generando token:', tokenError);
+      
+      // No revelar detalles del error interno
       return NextResponse.json({
         success: false,
-        error: 'Error interno. Inténtalo de nuevo más tarde.'
+        error: 'Error interno del servidor. Inténtalo de nuevo más tarde.'
       }, { status: 500 });
     }
 
-    console.log('[RESET PASSWORD] Contraseña actualizada exitosamente para:', validatedData.email);
-
-    // En un entorno de producción real, aquí enviarías un email
-    // Por ahora, mostraremos la contraseña en la consola para desarrollo
-    console.log('='.repeat(60));
-    console.log('🔐 NUEVA CONTRASEÑA GENERADA:');
-    console.log(`👤 Usuario: ${user.email}`);
-    console.log(`🔑 Nueva contraseña: ${newPassword}`);
-    console.log('⚠️  NOTA: En producción esto se enviaría por email');
-    console.log('='.repeat(60));
-
-    // Simular envío de email (en desarrollo solo registramos)
-    try {
-      // Aquí iría la lógica de envío de email
-      // await sendPasswordResetEmail(user.email, newPassword);
-      
-      console.log('[RESET PASSWORD] Email "enviado" (simulado) a:', validatedData.email);
-    } catch (emailError) {
-      console.error('[RESET PASSWORD] Error simulando envío de email:', emailError);
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
-      // En desarrollo, incluimos la contraseña para testing
-      ...(process.env.NODE_ENV === 'development' && {
-        dev_info: {
-          email: user.email,
-          new_password: newPassword,
-          message: 'Esta información solo se muestra en desarrollo'
-        }
-      })
-    });
-
   } catch (error) {
-    console.error('[RESET PASSWORD] Error:', error);
+    console.error('[RESET PASSWORD] Error general:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json({

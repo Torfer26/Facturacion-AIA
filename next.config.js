@@ -1,28 +1,37 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuración para OneDrive compatibility
+  // Configuración experimental básica
   experimental: {
-    // Deshabilitar optimizaciones que causan problemas con OneDrive
-    esmExternals: false,
-    serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
+    serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer', 'resend'],
   },
-  // Configuración de webpack para OneDrive
-  webpack: (config, { dev }) => {
-    if (dev) {
-      // Deshabilitar watch polling que causa problemas en OneDrive
-      config.watchOptions = {
-        poll: false,
-        ignored: ['node_modules', '.next'],
-      };
-    }
-    return config;
-  },
-  // Configuración de output para evitar symlinks
-  output: 'standalone',
-  // Deshabilitar SWC minifier que puede causar problemas
-  swcMinify: false,
+  
+  // Habilitar SWC minifier para mejor rendimiento
+  swcMinify: true,
+  
+  // Configuración de imágenes
   images: {
-    domains: ['drive.google.com'],
+    domains: ['drive.google.com', 'resend.dev'],
+  },
+  
+  // Optimizaciones adicionales
+  compiler: {
+    // Remover console.logs en producción
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
+  // Configuración de headers para mejor performance
+  async headers() {
+    return [
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
 }
 
