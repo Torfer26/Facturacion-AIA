@@ -25,16 +25,29 @@ function getAirtableBase() {
 
 export async function POST(req: NextRequest) {
   try {
-    // Validar la API key en los headers
-    const apiKey = req.headers.get('x-api-key');
+    // Debug: mostrar todos los headers recibidos
+    console.log('[WEBHOOK] Headers recibidos:');
+    req.headers.forEach((value, key) => {
+      if (key.toLowerCase().includes('api') || key.toLowerCase().includes('auth')) {
+        console.log(`[WEBHOOK] Header: ${key} = ${value}`);
+      }
+    });
+    
+    // Validar la API key en los headers (case-insensitive)
+    const apiKey = req.headers.get('x-api-key') || req.headers.get('X-API-Key');
+    
+    console.log('[WEBHOOK] API Key extraída:', apiKey ? `"${apiKey}"` : 'NULL');
+    console.log('[WEBHOOK] API Key esperada:', process.env.N8N_API_KEY ? `"${process.env.N8N_API_KEY}"` : 'NULL');
     
     if (!apiKey || !validateWebhookRequest(apiKey)) {
+      console.log('[WEBHOOK] ❌ Autenticación fallida. API Key recibida:', apiKey ? 'SET' : 'NOT_SET');
       return NextResponse.json(
         { error: 'API Key inválida o no proporcionada' },
         { status: 401 }
       );
     }
 
+    console.log('[WEBHOOK] ✅ Autenticación exitosa');
     console.log('[WEBHOOK] Procesando webhook de factura procesada...');
 
     // Obtener y validar los datos
