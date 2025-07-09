@@ -54,7 +54,7 @@ export default function Sidebar() {
 
         {user && (
           <div className="mt-4 px-2">
-            <p className="text-sm font-medium text-gray-700">Hola, {user.name}</p>
+            <p className="text-sm font-medium text-gray-700">Hola, {user.nombre}</p>
             <p className="text-xs text-gray-500">{user.email}</p>
           </div>
         )}

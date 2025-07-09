@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { IssuedInvoice } from '@/lib/types/issuedInvoice';
-
-// Helper function to get ISO timestamp
-function getNormalizedTimestamp(): string {
-  return new Date().toISOString();
-}
+import { getUserFromRequest, createUserFilter, addUserToRecordData, canAccessRecord, logDataAccess } from '@/lib/utils/userFilters';
+import { 
+  getNormalizedTimestamp, 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse
+} from '@/lib/utils/api-helpers';
 
 // Airtable connection setup
 function getAirtableBase() {
@@ -22,14 +24,30 @@ function getAirtableBase() {
 }
 
 // GET issued invoices
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const table = getAirtableBase();
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Usuario no autenticado'
+      }, { status: 401 });
+    }
 
-    const records = await table.select({
+    logDataAccess(user, 'GET', 'facturas-emitidas');
+
+    const table = getAirtableBase();
+    
+    // Aplicar filtros según el rol del usuario
+    const userFilter = createUserFilter(user);
+    const selectOptions = {
       view: 'Grid view',
-      sort: [{ field: 'facturaID', direction: 'desc' }]
-    }).all();
+      sort: [{ field: 'facturaID', direction: 'desc' as const }],
+      ...userFilter
+    };
+
+    const records = await table.select(selectOptions).all();
 
     const invoices = records.map(record => ({
       id: record.id,
@@ -78,17 +96,25 @@ export async function GET() {
 // POST para crear una nueva factura emitida
 export async function POST(request: Request) {
   try {
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Usuario no autenticado'
+      }, { status: 401 });
+    }
+
     const body = await request.json();
     const table = getAirtableBase();
 
+    logDataAccess(user, 'CREATE', 'facturas-emitidas');
+
     console.log('🔍 DEBUGGING POST FACTURA:');
     console.log('📦 Body completo recibido:', JSON.stringify(body, null, 2));
-    console.log('📦 Productos en body:', body.Productofactura);
-    console.log('📦 Productos en body (lowercase):', body.productofactura);
-    console.log('👤 Cliente nombre:', body.Nombrecliente);
-    console.log('👤 Cliente CIF:', body.CIFcliente);
+    console.log('👤 Usuario creador:', user.email, `(${user.id})`);
 
-    const fields = {
+    const baseFields = {
       CreationDate: body.CreationDate || body.creationDate,
       Fechavencimiento: body.Fechavencimiento || body.fechavencimiento,
       Nombrecliente: body.Nombrecliente || body.nombrecliente,
@@ -102,6 +128,9 @@ export async function POST(request: Request) {
       estadofactura: body.estadofactura,
       datosbancarios: body.datosbancarios,
     };
+
+    // Añadir información del usuario automáticamente
+    const fields = addUserToRecordData(baseFields, user);
 
     console.log('📝 Fields que se van a guardar en Airtable:', JSON.stringify(fields, null, 2));
 
@@ -128,9 +157,30 @@ export async function POST(request: Request) {
 // PUT para actualizar
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Usuario no autenticado'
+      }, { status: 401 });
+    }
+
     const id = params.id;
     const data = await request.json();
     const table = getAirtableBase();
+
+    // Verificar que el usuario puede acceder a este registro
+    const existingRecord = await table.find(id);
+    if (!canAccessRecord(user, existingRecord.fields)) {
+      logDataAccess(user, 'UPDATE_DENIED', 'facturas-emitidas', id);
+      return NextResponse.json({
+        success: false,
+        error: 'No tienes permisos para modificar esta factura'
+      }, { status: 403 });
+    }
+
+    logDataAccess(user, 'UPDATE', 'facturas-emitidas', id);
 
     const updated = await table.update([
       {
@@ -148,6 +198,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           total: data.total,
           estadofactura: data.estadofactura,
           datosbancarios: data.datosbancarios,
+          // Mantener la información del usuario original
+          UserID: existingRecord.get('UserID'),
+          UserEmail: existingRecord.get('UserEmail'),
         }
       }
     ]);
@@ -169,8 +222,29 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 // DELETE
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Usuario no autenticado'
+      }, { status: 401 });
+    }
+
     const id = params.id;
     const table = getAirtableBase();
+
+    // Verificar que el usuario puede acceder a este registro
+    const existingRecord = await table.find(id);
+    if (!canAccessRecord(user, existingRecord.fields)) {
+      logDataAccess(user, 'DELETE_DENIED', 'facturas-emitidas', id);
+      return NextResponse.json({
+        success: false,
+        error: 'No tienes permisos para eliminar esta factura'
+      }, { status: 403 });
+    }
+
+    logDataAccess(user, 'DELETE', 'facturas-emitidas', id);
 
     await table.destroy(id);
 

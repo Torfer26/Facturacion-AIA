@@ -43,5 +43,5 @@ export async function setupAdminFromEnv(): Promise<void> {
   await createInitialAdmin({ email, nombre, password });
   
   console.log('✅ Configuración completada');
-  console.log('🔗 Ahora puedes hacer login en: http://localhost:3000/login');
+  console.log('🔗 Ahora puedes hacer login en: http://localhost:3000/');
 } 

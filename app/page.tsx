@@ -46,8 +46,21 @@ export default function HomePage() {
 
         const data = await response.json();
 
-        if (data.success) {
-          router.push('/dashboard');
+        if (data.success && data.token) {
+          // Guardar token en localStorage como backup
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('auth-token', data.token);
+            } catch (e) {
+              console.warn('Could not save to localStorage');
+            }
+          }
+          
+          // Esperar un momento para asegurar que la cookie se haya configurado
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Usar window.location.href para una navegación más confiable
+          window.location.href = '/dashboard';
         } else {
           setError(data.error || 'Error al iniciar sesión');
         }

@@ -1,0 +1,630 @@
+{
+  "name": "07 Facturas AIA",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 2. Classic PDF Extractor\nEasiest option\n\n\n",
+        "height": 363,
+        "width": 646,
+        "color": 7
+      },
+      "id": "a5bc9c67-2062-4f6f-b1ba-6eef323cb2d7",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 1. Watch for Invoice Emails\n[Gmail Documentation](https://docs.n8n.io/integrations/builtin/credentials/google/oauth-single-service/#enable-apis)\n",
+        "height": 370,
+        "width": 609,
+        "color": 7
+      },
+      "id": "dca795ce-3255-4a50-9ab0-42bf1e339175",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        80,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3. Use LLMs to Structure Data\n[Airtable Documentation](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.airtable/?utm_source=n8n_app&utm_medium=node_settings_modal-credential_link&utm_campaign=n8n-nodes-base.airtable)\n",
+        "height": 457,
+        "width": 405,
+        "color": 7
+      },
+      "id": "129b8da4-a727-4943-9d45-56385bf66f13",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1400,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 4. Insert in Airtable",
+        "height": 460,
+        "width": 322,
+        "color": 7
+      },
+      "id": "825d1217-74c7-4495-b50b-bd5958b2363b",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2100,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1uoDPMwMSw4p3iGNHNtSZK_eT3P_3xhBy",
+          "mode": "list",
+          "cachedResultName": "Facturas-recibidas",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1uoDPMwMSw4p3iGNHNtSZK_eT3P_3xhBy"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "id": "8df015d5-f547-469f-a009-9fe2be383c70",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VLYO8HOgsQ1w1qNz",
+          "name": "Google Drive account ai automate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        400,
+        300
+      ],
+      "id": "1f863556-e197-42ba-97ca-ad28d5b23b87",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VLYO8HOgsQ1w1qNz",
+          "name": "Google Drive account ai automate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        260
+      ],
+      "id": "654004cc-c608-4367-8ffa-5452160e5db8",
+      "name": "Upload to mistral",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ULsWSbcATx1A9j6d",
+          "name": "Header mistral api key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "24"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        260
+      ],
+      "id": "de233790-4cc5-4bd6-b627-1e40b73fdaa2",
+      "name": "Get signed URL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ULsWSbcATx1A9j6d",
+          "name": "Header mistral api key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"include_image_base64\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        260
+      ],
+      "id": "c8a742bb-2e45-40bb-87c7-e52646970a48",
+      "name": "Get OCR Results",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ULsWSbcATx1A9j6d",
+          "name": "Header mistral api key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.pages[0].markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "InvoiceDate",
+              "type": "date",
+              "description": "Date of invoice"
+            },
+            {
+              "name": "Customer Name",
+              "description": "Customer Name"
+            },
+            {
+              "name": "Supplier VAT Identification Number",
+              "description": "NIF/CIF del proveedor o número de identificación fiscal"
+            },
+            {
+              "name": "Supplier Address",
+              "description": "Supplier Address"
+            },
+            {
+              "name": "Total Price excluding VAT",
+              "type": "number",
+              "description": "Total Price excluding VAT"
+            },
+            {
+              "name": "Total Price including VAT",
+              "type": "number",
+              "description": "Total Price including VAT"
+            },
+            {
+              "name": "Tax percetage",
+              "type": "number",
+              "description": "Tax percetage applied"
+            },
+            {
+              "name": "Tax amount",
+              "type": "number",
+              "description": "Tax amount paid"
+            },
+            {
+              "name": "Supplier name",
+              "description": "Supplier name"
+            },
+            {
+              "name": "Invoice description",
+              "description": "Invoice description"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "=Context:\nYou are an artificial-intelligence model specialised in extracting structured information from invoices.\n\nYou will receive **only one** block of raw invoice text (or OCR output) delimited as follows:\n\n##### BEGIN INVOICE #####\n< invoice text here >\n##### END INVOICE #####\n\nConsider **only** the text between those tags when extracting data.  \nIgnore every other part of this prompt.\n\nYour task is to identify and return the following fields in a single JSON object:\n\n- InvoiceDate\n- Customer Name\n- Supplier VAT Identification Number\n- Supplier Address\n- Total Price excluding VAT\n- Total Price including VAT\n- Tax percentage\n- Tax amount\n- Supplier name\n- Invoice description\n\n\nConstraints  \n1. If any field does not appear inside the invoice block, set its value to **null**.  \n2. Do not invent or “hallucinate” information. Extract only data that is clearly present inside the invoice block.  \n3. Return **ONLY** the plain JSON object — no extra text, no surrounding quotes and no markdown code fences.  \n4. Use the keys exactly as specified above (case-sensitive).  \n5. Follow the date format that best matches what you find (e.g. `YYYY-MM-DD` or `DD.MM.YYYY`).  \n6. Monetary amounts must use a dot as the decimal separator (e.g. `123.45`) and must **not** include any currency symbol.  \n7. If several interpretations are possible, choose the most probable one given the context of the invoice.  \n8. For **Tax percentage**, return only the numeric value (no `%` sign).\n\n9. Populate **Tax percentage** and **Tax amount** *only* if a tax keyword  \n   (“VAT”, “IVA”, “TAX”, “GST”, “Sales tax”, etc.) appears **inside the invoice block**.  \n   Otherwise both fields must be **null**.\n\n10. Do **not** calculate or infer tax values. Extract them only when they are explicitly labelled as such.  \n\n11. If the invoice shows just a single total amount and no tax field:  \n    • “Total Price excluding VAT” = that amount  \n    • “Total Price including VAT” = the same amount  \n    • “Tax percentage” and “Tax amount” = **null**\n\n12. If “Total Price excluding VAT”, “Tax amount” and “Total Price including VAT” are all present,  \n    verify that *(excluding + tax) ≈ including* (tolerance ±0.02).  \n    If the numbers do not balance, overwrite the tax fields with **null**.\n\n13. Extract monetary amounts only when they are accompanied by a descriptive label  \n    (“Total”, “Subtotal”, “Amount Due”, “Net”, etc.). Ignore standalone numbers.\n\n14. Strip any leading currency symbols (€ £ $ etc.) before returning numeric amounts.\n\n15. *(Optional runtime variable)*  \n    If a boolean variable **hasTaxKeyword** is provided and is `false`, force “Tax percentage” and  \n    “Tax amount” to **null**, even if multiple totals are present.\n\n\nTask:  \nAnalyse the text between **BEGIN INVOICE** and **END INVOICE** and return a plain JSON object obeying all the above constraints."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        200
+      ],
+      "id": "a2f61038-c3a8-4a96-9442-cf9afaa69b7f",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "anthropic/claude-3.5-haiku",
+          "mode": "list",
+          "cachedResultName": "anthropic/claude-3.5-haiku"
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1460,
+        400
+      ],
+      "id": "94124126-f742-4d10-b816-8998b8520ccf",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pe92hDrWDed9veHZ",
+          "name": "Open router Api "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app8zLs4NmoiN5Fwt",
+          "mode": "list",
+          "cachedResultName": "Facturacion AIA",
+          "cachedResultUrl": "https://airtable.com/app8zLs4NmoiN5Fwt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblYW9NQygNEJXqU5",
+          "mode": "list",
+          "cachedResultName": "Facturas-recibidas",
+          "cachedResultUrl": "https://airtable.com/app8zLs4NmoiN5Fwt/tblYW9NQygNEJXqU5"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "InvoiceDate": "={{ $json.output.InvoiceDate }}",
+            "InvoiceNumber": "={{ $json.output.InvoiceNumber }}",
+            "Customer Name": "={{ $json.output['Customer Name'] }}",
+            "Supplier VAT Identification Number": "={{ $json.output['Supplier VAT Identification Number'] }}",
+            "Supplier Address": "={{ $json.output['Supplier Address'] }}",
+            "Total Price excluding VAT": "={{ $json.output['Total Price excluding VAT'] }}",
+            "Total Price including VAT": "={{ $json.output['Total Price including VAT'] }}",
+            "Tax percentage": "={{ $json.output['Tax percetage'] }}",
+            "Tax amount": "={{ $json.output['Tax amount'] }}",
+            "Invoice description": "={{ $json.output['Invoice description'] }}",
+            "Supplier name": "={{ $json.output['Supplier name'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "InvoiceNumber",
+              "displayName": "InvoiceNumber",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "InvoiceDate",
+              "displayName": "InvoiceDate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Supplier VAT Identification Number",
+              "displayName": "Supplier VAT Identification Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Supplier Address",
+              "displayName": "Supplier Address",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total Price excluding VAT",
+              "displayName": "Total Price excluding VAT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total Price including VAT",
+              "displayName": "Total Price including VAT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tax percentage",
+              "displayName": "Tax percentage",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tax amount",
+              "displayName": "Tax amount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Invoice description",
+              "displayName": "Invoice description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Supplier name",
+              "displayName": "Supplier name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2200,
+        180
+      ],
+      "id": "f1b3ee75-44fd-495d-a078-375514d6812d",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "fcJwEz6ovjBQlcXB",
+          "name": "Airtable Facturacion-AIA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive').item.json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1lQlwOr-zQaawABHnwrpGvFudsIbNLF7N",
+          "mode": "list",
+          "cachedResultName": "recibidas-procesadas",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1lQlwOr-zQaawABHnwrpGvFudsIbNLF7N"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        420
+      ],
+      "id": "90a3f025-6f1a-4ce4-8cd7-ac7ec182d491",
+      "name": "Google Drive1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "VLYO8HOgsQ1w1qNz",
+          "name": "Google Drive account ai automate"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Upload to mistral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to mistral": {
+      "main": [
+        [
+          {
+            "node": "Get signed URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get signed URL": {
+      "main": [
+        [
+          {
+            "node": "Get OCR Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get OCR Results": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "11e99dbd-ee71-4eaa-b05a-766716c0f550",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "08f05cc53827941a3f4a40c3669520fc0c218577e904856807937e552f0efd54"
+  },
+  "id": "dxzrPKwfoKAT8uqW",
+  "tags": []
+}

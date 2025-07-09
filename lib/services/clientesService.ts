@@ -1,4 +1,5 @@
 import { Cliente } from '@/lib/types/cliente';
+import { UserInfo } from '@/lib/utils/userFilters';
 
 // Helper function to normalize dates
 function normalizeDate(dateString: string): string {
@@ -29,9 +30,18 @@ const AIRTABLE_BASE_ID = requiredEnvVars.AIRTABLE_BASE_ID
 const AIRTABLE_API_URL = requiredEnvVars.AIRTABLE_API_URL
 const AIRTABLE_TABLE_NAME_CLIENTES = process.env.AIRTABLE_TABLE_NAME_CLIENTES || 'tblh8z1wrQvi4xPpP';
 
-export async function getClientes(): Promise<Cliente[]> {
+export async function getClientes(filterFormula?: string): Promise<Cliente[]> {
   try {
-    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_CLIENTES}`
+    let url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_CLIENTES}`
+    
+    // Añadir filtro si se proporciona
+    if (filterFormula) {
+      const params = new URLSearchParams({
+        filterByFormula: filterFormula
+      });
+      url += `?${params.toString()}`;
+    }
+    
     const headers = {
       'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',
@@ -98,7 +108,10 @@ export async function getClientes(): Promise<Cliente[]> {
   }
 }
 
-export async function createCliente(clienteData: Omit<Cliente, 'id' | 'createdAt' | 'updatedAt'>): Promise<Cliente> {
+export async function createCliente(
+  clienteData: Omit<Cliente, 'id' | 'createdAt' | 'updatedAt'>,
+  user?: UserInfo
+): Promise<Cliente> {
   try {
     const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_CLIENTES}`
     const headers = {
@@ -106,33 +119,39 @@ export async function createCliente(clienteData: Omit<Cliente, 'id' | 'createdAt
       'Content-Type': 'application/json',
     }
 
+    const fields: any = {
+      Nombre: clienteData.nombre,
+      CIF_NIF: clienteData.cifNif,
+      Email: clienteData.email,
+      Telefono: clienteData.telefono,
+      Direccion: clienteData.direccion,
+      CodigoPostal: clienteData.codigoPostal,
+      Ciudad: clienteData.ciudad,
+      Provincia: clienteData.provincia,
+      Pais: clienteData.pais || 'España',
+      PersonaContacto: clienteData.personaContacto,
+      TelefonoContacto: clienteData.telefonoContacto,
+      EmailContacto: clienteData.emailContacto,
+      TipoCliente: clienteData.tipoCliente || 'Empresa',
+      Estado: clienteData.estado || 'Activo',
+      FormaPago: clienteData.formaPago || 'Transferencia',
+      DiasPago: clienteData.diasPago || 30,
+      LimiteCredito: clienteData.limiteCredito || 0,
+      DescuentoHabitual: clienteData.descuentoHabitual || 0,
+      FechaAlta: clienteData.fechaAlta || new Date().toISOString(),
+      TotalFacturado: clienteData.totalFacturado || 0,
+      NumeroFacturas: clienteData.numeroFacturas || 0,
+      Notas: clienteData.notas || ''
+    };
+
+    // Añadir información del usuario si se proporciona
+    if (user) {
+      fields.UserID = user.id;
+      fields.UserEmail = user.email;
+    }
+
     const body = {
-      records: [{
-        fields: {
-          Nombre: clienteData.nombre,
-          CIF_NIF: clienteData.cifNif,
-          Email: clienteData.email,
-          Telefono: clienteData.telefono,
-          Direccion: clienteData.direccion,
-          CodigoPostal: clienteData.codigoPostal,
-          Ciudad: clienteData.ciudad,
-          Provincia: clienteData.provincia,
-          Pais: clienteData.pais || 'España',
-          PersonaContacto: clienteData.personaContacto,
-          TelefonoContacto: clienteData.telefonoContacto,
-          EmailContacto: clienteData.emailContacto,
-          TipoCliente: clienteData.tipoCliente || 'Empresa',
-          Estado: clienteData.estado || 'Activo',
-          FormaPago: clienteData.formaPago || 'Transferencia',
-          DiasPago: clienteData.diasPago || 30,
-          LimiteCredito: clienteData.limiteCredito || 0,
-          DescuentoHabitual: clienteData.descuentoHabitual || 0,
-          FechaAlta: clienteData.fechaAlta || new Date().toISOString(),
-          TotalFacturado: clienteData.totalFacturado || 0,
-          NumeroFacturas: clienteData.numeroFacturas || 0,
-          Notas: clienteData.notas || ''
-        }
-      }]
+      records: [{ fields }]
     }
 
     const response = await fetch(url, {

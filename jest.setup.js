@@ -1,25 +1,27 @@
-// Learn more: https://github.com/testing-library/jest-dom
-import '@testing-library/jest-dom'
+// Configuración global para pruebas
+import 'jest-environment-jsdom'
 
-// Mock next/navigation
+// Mock para window.location
+delete window.location;
+window.location = { href: '', assign: jest.fn(), reload: jest.fn() };
+
+// Mock para next/navigation
 jest.mock('next/navigation', () => ({
-  useRouter() {
-    return {
-      push: jest.fn(),
-      replace: jest.fn(),
-      prefetch: jest.fn(),
-      back: jest.fn(),
-    }
-  },
-  usePathname() {
-    return ''
-  },
-  useSearchParams() {
-    return new URLSearchParams()
-  },
-}))
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => '/test-path',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
-// Mock next-auth
+// Mock next-auth - TEMPORALMENTE COMENTADO
+// NextAuth ha sido deshabilitado para evitar conflictos
+/*
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
   useSession: () => ({
@@ -27,6 +29,7 @@ jest.mock('next-auth', () => ({
     status: 'unauthenticated',
   }),
 }))
+*/
 
 // Mock Google Drive API
 jest.mock('googleapis', () => ({

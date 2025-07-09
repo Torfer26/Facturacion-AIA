@@ -180,12 +180,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = safeStorage.getItem(TOKEN_KEY);
+        // Intentar obtener token de múltiples fuentes
+        let token = safeStorage.getItem(TOKEN_KEY);
+        
+        // Si no hay token en localStorage, intentar con cookies del documento
+        if (!token && typeof document !== 'undefined') {
+          const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('auth-token='))
+            ?.split('=')[1];
+          if (cookieValue) {
+            token = decodeURIComponent(cookieValue);
+          }
+        }
+        
         if (!token) {
+          console.log('[AUTH] No token found');
           setIsLoading(false);
           return;
         }
 
+        console.log('[AUTH] Token found, verifying...');
         const response = await fetch('/api/auth/check', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -196,15 +211,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.authenticated && data.user) {
+            console.log('[AUTH] Authentication successful:', data.user.email);
             setUser(data.user);
           } else {
+            console.log('[AUTH] Authentication failed:', data);
             safeStorage.removeItem(TOKEN_KEY);
           }
         } else {
+          console.log('[AUTH] Auth check request failed:', response.status);
           safeStorage.removeItem(TOKEN_KEY);
         }
       } catch (err) {
-        console.error('Auth check failed:', err);
+        console.error('[AUTH] Auth check failed:', err);
         safeStorage.removeItem(TOKEN_KEY);
       } finally {
         setIsLoading(false);
@@ -261,16 +279,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout function
   const logout = async () => {
+    console.log('[AUTH] Starting logout process...');
     setIsLoading(true);
     try {
+      console.log('[AUTH] Calling logout API...');
       await fetch('/api/auth/logout', { method: 'POST' });
+      console.log('[AUTH] Logout API call completed');
     } catch (err) {
-      console.error('Logout error:', err);
+      console.error('[AUTH] Logout API error:', err);
     } finally {
+      console.log('[AUTH] Cleaning up tokens and user data...');
       safeStorage.removeItem(TOKEN_KEY);
       setUser(null);
       setIsLoading(false);
-      window.location.href = '/login';
+      
+      console.log('[AUTH] Redirecting to home page...');
+      // Añadir pequeño delay para asegurar cleanup completo
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
     }
   };
 

@@ -49,7 +49,7 @@ export const AUTH_CONFIG = {
   ],  
   // Rutas públicas (no requieren autenticación)
   PUBLIC_ROUTES: [
-    '/login',
+    '/',
     '/api/auth/login',
     '/api/auth/logout',
   ],

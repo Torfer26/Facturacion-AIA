@@ -44,9 +44,18 @@ export function getAirtableBase() {
   return base('Facturas emitidas'); // Nombre de la tabla en Airtable
 }
 
-export async function getInvoices(): Promise<Invoice[]> {
+export async function getInvoices(filterFormula?: string): Promise<Invoice[]> {
   try {
-    const url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_RECIBIDAS}`
+    let url = `${AIRTABLE_API_URL}/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME_RECIBIDAS}`
+    
+    // Añadir filtro si se proporciona
+    if (filterFormula) {
+      const params = new URLSearchParams({
+        filterByFormula: filterFormula
+      });
+      url += `?${params.toString()}`;
+    }
+    
     const headers = {
       'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
       'Content-Type': 'application/json',

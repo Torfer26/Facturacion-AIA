@@ -7,7 +7,6 @@ import { rateLimiter } from './lib/security/rateLimiter';
 // List of paths that don't require authentication
 const publicPaths = [
   '/',
-  '/login',
   '/test-auth',
   '/api/auth/login',
   '/api/auth/logout',
@@ -42,7 +41,7 @@ export async function middleware(request: NextRequest) {
   
   // Only log in development mode
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[MIDDLEWARE] ${pathname}`);
+    console.log(`[MIDDLEWARE] Processing: ${pathname}`);
   }
   
   // Rate limiting para todas las APIs
@@ -75,6 +74,9 @@ export async function middleware(request: NextRequest) {
   
   // Allow access to public paths
   if (isPublicPath(pathname)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] Public path allowed: ${pathname}`);
+    }
     const response = NextResponse.next();
     
     // Aplicar headers de seguridad según el tipo de ruta
@@ -89,8 +91,15 @@ export async function middleware(request: NextRequest) {
   const token = request.headers.get('Authorization')?.split(' ')[1] || 
                 request.cookies.get('auth-token')?.value;
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[MIDDLEWARE] Token found for ${pathname}:`, !!token);
+  }
+  
   // If there's no token and this is an API route, return 401
   if (!token && pathname.startsWith('/api/')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] No token for API route: ${pathname}, returning 401`);
+    }
     const response = NextResponse.json(
       { success: false, error: 'Unauthorized' }, 
       { status: 401 }
@@ -100,10 +109,13 @@ export async function middleware(request: NextRequest) {
     return applyCorsHeaders(secureResponse, request.headers.get('origin'));
   }
   
-  // If there's no token and this is a page route, redirect to login
+  // If there's no token and this is a page route, redirect to home page
   if (!token) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] No token for page route: ${pathname}, redirecting to home`);
+    }
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/';
     url.searchParams.set('from', pathname);
     return NextResponse.redirect(url);
   }
@@ -120,10 +132,10 @@ export async function middleware(request: NextRequest) {
       );
     }
     
-    // If invalid token and this is a page route, redirect to login
+    // If invalid token and this is a page route, redirect to home page
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
+      url.pathname = '/';
       return NextResponse.redirect(url);
     }
     
@@ -150,7 +162,7 @@ export async function middleware(request: NextRequest) {
       console.error('[MIDDLEWARE] Error processing token:', error);
     }
     
-    // Error processing token, redirect to login
+    // Error processing token, redirect to home page
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         { success: false, error: 'Server error' }, 
@@ -159,7 +171,7 @@ export async function middleware(request: NextRequest) {
     }
     
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 }

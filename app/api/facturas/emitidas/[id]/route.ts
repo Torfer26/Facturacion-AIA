@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server'
 import Airtable from 'airtable'
 import { IssuedInvoice } from '@/lib/types/issuedInvoice'
 
-// Helper function to ensure date is current year
-function getNormalizedTimestamp(): string {
-  const now = new Date();
-  return now.toISOString();
-}
+import { getNormalizedTimestamp } from '@/lib/utils/api-helpers';
 
 // Airtable configuration
 function getAirtableBase() {

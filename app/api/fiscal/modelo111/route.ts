@@ -1,58 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getModelos111, createModelo111 } from '@/lib/services/airtable-fiscal'
 import { verifyToken } from '@/lib/auth'
-
 import { z } from 'zod'
-
-// Helper function to ensure date is current year
-function getNormalizedTimestamp(): string {
-  const now = new Date();
-  return now.toISOString();
-}
-
-// Check authentication helper
-async function checkAuth(request: Request) {
-  const cookieHeader = request.headers.get('cookie') || '';
-  
-  const cookies = Object.fromEntries(
-    cookieHeader.split(';').map(cookie => {
-      const [name, value] = cookie.trim().split('=');
-      return [name, value];
-    })
-  );
-  
-  const token = cookies['auth-token'];
-  
-  if (!token) {
-    return { authenticated: false, error: 'No authentication token provided' };
-  }
-  
-  // Try to verify token with both systems
-  let user = await verifyToken(token); // V1 system
-  
-  if (!user) {
-    // Try V2 system (JWT)
-    try {
-      const jwtUser = await verifyToken(token);
-      if (jwtUser) {
-        user = {
-          id: jwtUser.id,
-          email: jwtUser.email,
-          name: jwtUser.name || jwtUser.email,
-          role: jwtUser.role.toLowerCase()
-        };
-      }
-    } catch (error) {
-      // JWT verification failed, user remains null
-    }
-  }
-  
-  if (!user) {
-    return { authenticated: false, error: 'Invalid authentication token' };
-  }
-  
-  return { authenticated: true, user };
-}
+import { 
+  getNormalizedTimestamp, 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse,
+  checkAuth
+} from '@/lib/utils/api-helpers'
 
 // Schema de validación para crear un modelo 111
 const Modelo111Schema = z.object({
@@ -84,29 +40,20 @@ export async function GET(request: Request) {
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
-      return NextResponse.json({
-        success: false,
-        error: auth.error
-      }, { status: 401 });
+      return createAuthErrorResponse(auth.error);
     }
 
     const modelos = await getModelos111();
 
-    return NextResponse.json({
-      success: true,
-      modelos,
-      metadata: {
-        count: modelos.length,
-        timestamp: getNormalizedTimestamp()
-      }
-    });
+    return createSuccessResponse(
+      { modelos },
+      { count: modelos.length }
+    );
   } catch (error) {
     console.error('Error getting modelos 111:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido al obtener los modelos 111',
-      timestamp: getNormalizedTimestamp()
-    }, { status: 500 });
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido al obtener los modelos 111'
+    );
   }
 }
 
@@ -115,10 +62,7 @@ export async function POST(request: Request) {
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
-      return NextResponse.json({
-        success: false,
-        error: auth.error
-      }, { status: 401 });
+      return createAuthErrorResponse(auth.error);
     }
 
     const data = await request.json();
@@ -142,6 +86,7 @@ export async function POST(request: Request) {
 
     const nuevoModelo = await createModelo111({
       ...modeloData,
+      trimestre: modeloData.trimestre as 1 | 2 | 3 | 4,
       estado: modeloData.estado || 'borrador',
       numeroPerceptoresTrabajo: modeloData.numeroPerceptoresTrabajo || 0,
       importeRetribucionesTrabajo: modeloData.importeRetribucionesTrabajo || 0,
@@ -166,10 +111,8 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error creating modelo 111:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido al crear el modelo 111',
-      timestamp: getNormalizedTimestamp()
-    }, { status: 500 });
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido al crear el modelo 111'
+    );
   }
 } 

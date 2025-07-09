@@ -56,7 +56,7 @@ async function main() {
     await createInitialAdmin(adminData);
     
     console.log('\n✅ ¡Configuración completada exitosamente!');
-    console.log('🔗 Ahora puedes hacer login en: http://localhost:3000/login');
+    console.log('🔗 Ahora puedes hacer login en: http://localhost:3000/');
     console.log('📧 Email:', adminData.email);
     console.log('🔒 Contraseña:', adminData.password);
     

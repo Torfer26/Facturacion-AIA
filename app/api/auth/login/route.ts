@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth/auth-service';
 import { LoginSchema } from '@/lib/auth/types';
+import { 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse 
+} from '@/lib/utils/api-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,18 +18,11 @@ export async function POST(request: NextRequest) {
     const result = await AuthService.login(validatedInput);
     
     if (!result.success) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: result.error || 'Credenciales inválidas' 
-        },
-        { status: 401 }
-      );
+      return createAuthErrorResponse(result.error || 'Credenciales inválidas');
     }
     
     // Login exitoso - configurar cookie y respuesta
-    const response = NextResponse.json({
-      success: true,
+    const response = createSuccessResponse({
       user: result.user,
       token: result.token
     });
@@ -44,21 +42,9 @@ export async function POST(request: NextRequest) {
     
     // Error de validación de Zod
     if (error instanceof Error && error.message.includes('validation')) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Datos de entrada inválidos' 
-        },
-        { status: 400 }
-      );
+      return createServerErrorResponse('Datos de entrada inválidos');
     }
     
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error interno del servidor' 
-      },
-      { status: 500 }
-    );
+    return createServerErrorResponse('Error interno del servidor');
   }
 }

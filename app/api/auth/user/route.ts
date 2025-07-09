@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
+import { 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse 
+} from '@/lib/utils/api-helpers';
 
 export async function GET() {
   try {
@@ -8,34 +13,24 @@ export async function GET() {
     const token = cookieStore.get('auth-token')?.value;
 
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'No autenticado' },
-        { status: 401 }
-      );
+      return createAuthErrorResponse('No autenticado');
     }
 
     const user = await verifyToken(token);
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Token inválido' },
-        { status: 401 }
-      );
+      return createAuthErrorResponse('Token inválido');
     }
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       user: {
         id: user.id,
         email: user.email,
         name: user.nombre,
         role: user.rol
-      },
+      }
     });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return createServerErrorResponse('Error interno del servidor');
   }
 } 

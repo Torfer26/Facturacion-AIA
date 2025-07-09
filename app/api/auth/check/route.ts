@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth/auth-service';
+import { 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse 
+} from '@/lib/utils/api-helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,37 +16,24 @@ export async function GET(request: NextRequest) {
     
     // Sin token
     if (!token) {
-      return NextResponse.json({ 
-        success: false,
-        authenticated: false, 
-        error: 'No token provided' 
-      });
+      return createAuthErrorResponse('No token provided');
     }
     
     // Verificar token con el sistema V3
     const user = await AuthService.verifyToken(token);
     
     if (!user) {
-      return NextResponse.json({ 
-        success: false,
-        authenticated: false, 
-        error: 'Invalid token' 
-      });
+      return createAuthErrorResponse('Invalid token');
     }
     
     // Token válido
-    return NextResponse.json({ 
-      success: true,
+    return createSuccessResponse({ 
       authenticated: true, 
       user 
     });
     
   } catch (error) {
     console.error('Auth check error:', error);
-    return NextResponse.json({ 
-      success: false,
-      authenticated: false, 
-      error: 'Server error' 
-    }, { status: 500 });
+    return createServerErrorResponse('Server error');
   }
 } 

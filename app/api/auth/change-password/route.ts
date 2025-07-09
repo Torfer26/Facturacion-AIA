@@ -3,6 +3,11 @@ import { verifyToken } from '@/lib/auth/jwt';
 import { findUserById, updateUserPassword } from '@/lib/auth/airtable-service';
 import { verifyPassword } from '@/lib/auth/password';
 import { z } from 'zod';
+import { 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse 
+} from '@/lib/utils/api-helpers';
 
 // Schema de validación para cambio de contraseña
 const changePasswordSchema = z.object({
@@ -24,18 +29,12 @@ export async function POST(request: NextRequest) {
                   request.cookies.get('auth-token')?.value;
 
     if (!token) {
-      return NextResponse.json({
-        success: false,
-        error: 'No autenticado'
-      }, { status: 401 });
+      return createAuthErrorResponse('No autenticado');
     }
 
     const userPayload = await verifyToken(token);
     if (!userPayload) {
-      return NextResponse.json({
-        success: false,
-        error: 'Token inválido'
-      }, { status: 401 });
+      return createAuthErrorResponse('Token inválido');
     }
 
     // Validar datos del request
@@ -47,10 +46,7 @@ export async function POST(request: NextRequest) {
     // Obtener usuario actual de la base de datos
     const currentUser = await findUserById(userPayload.id);
     if (!currentUser) {
-      return NextResponse.json({
-        success: false,
-        error: 'Usuario no encontrado'
-      }, { status: 404 });
+      return createServerErrorResponse('Usuario no encontrado');
     }
 
     // Verificar contraseña actual
@@ -64,10 +60,7 @@ export async function POST(request: NextRequest) {
     
     const storedPasswordHash = userRecord.get('Password');
     if (!storedPasswordHash) {
-      return NextResponse.json({
-        success: false,
-        error: 'Error interno: contraseña no encontrada'
-      }, { status: 500 });
+      return createServerErrorResponse('Error interno: contraseña no encontrada');
     }
 
     // Verificar que la contraseña actual es correcta
@@ -77,10 +70,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!isCurrentPasswordValid) {
-      return NextResponse.json({
-        success: false,
-        error: 'La contraseña actual es incorrecta'
-      }, { status: 400 });
+      return createServerErrorResponse('La contraseña actual es incorrecta');
     }
 
     // Verificar que la nueva contraseña es diferente
@@ -90,26 +80,19 @@ export async function POST(request: NextRequest) {
     );
 
     if (isSamePassword) {
-      return NextResponse.json({
-        success: false,
-        error: 'La nueva contraseña debe ser diferente a la actual'
-      }, { status: 400 });
+      return createServerErrorResponse('La nueva contraseña debe ser diferente a la actual');
     }
 
     // Actualizar contraseña
     const success = await updateUserPassword(userPayload.id, validatedData.newPassword);
 
     if (!success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Error al actualizar la contraseña'
-      }, { status: 500 });
+      return createServerErrorResponse('Error al actualizar la contraseña');
     }
 
     console.log('[CHANGE PASSWORD] Contraseña actualizada exitosamente para:', userPayload.email);
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       message: 'Contraseña cambiada exitosamente'
     });
 
@@ -117,16 +100,9 @@ export async function POST(request: NextRequest) {
     console.error('[CHANGE PASSWORD] Error:', error);
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        error: 'Datos inválidos',
-        details: error.errors
-      }, { status: 400 });
+      return createServerErrorResponse('Datos inválidos: ' + JSON.stringify(error.errors));
     }
 
-    return NextResponse.json({
-      success: false,
-      error: 'Error interno del servidor'
-    }, { status: 500 });
+    return createServerErrorResponse('Error interno del servidor');
   }
 } 

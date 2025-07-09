@@ -29,11 +29,16 @@ export default function DashboardPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    // Only redirect if we're sure user is not authenticated (loading is complete)
-    if (!isLoading && !isAuthenticated) {
-      window.location.href = "/login";
+    // Solo redirigir si estamos completamente seguros de que no está autenticado
+    // y hemos esperado suficiente tiempo para la verificación
+    if (!isLoading && !isAuthenticated && !user) {
+      console.log('[DASHBOARD] User not authenticated, redirecting to home');
+      // Usar setTimeout para evitar problemas de timing
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, user]);
 
   // Fetch dashboard statistics
   useEffect(() => {
@@ -105,9 +110,9 @@ export default function DashboardPage() {
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Acceso Restringido</h2>
           <p className="text-gray-500 mb-4">Debe iniciar sesión para acceder a esta página</p>
-          <Button onClick={() => window.location.href = "/login"}>
-            Iniciar Sesión
-          </Button>
+                      <Button onClick={() => window.location.href = "/"}>
+              Iniciar Sesión
+            </Button>
         </div>
       </div>
     );
@@ -125,7 +130,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Panel de Control</h1>
         <div className="flex items-center gap-4">
-          <span>Bienvenido, {user.name}</span>
+          <span>Bienvenido, {user.nombre}</span>
           <Button variant="outline" onClick={logout}>
             Cerrar sesión
           </Button>

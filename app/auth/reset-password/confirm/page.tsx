@@ -118,9 +118,9 @@ export default function ResetPasswordConfirmPage() {
 
       if (data.success) {
         setSuccess(true);
-        setTimeout(() => {
-          router.push('/login');
-        }, 3000);
+              setTimeout(() => {
+        router.push('/');
+      }, 3000);
       } else {
         setError(data.error || 'Error al restablecer la contraseña');
       }
@@ -190,7 +190,7 @@ export default function ResetPasswordConfirmPage() {
                 </Button>
               </Link>
               
-              <Link href="/login">
+              <Link href="/">
                 <Button variant="outline" className="w-full h-12">
                   Volver al Login
                 </Button>
@@ -224,7 +224,7 @@ export default function ResetPasswordConfirmPage() {
               Serás redirigido al login en unos segundos.
             </p>
             
-            <Link href="/login">
+            <Link href="/">
               <Button className="w-full h-12 bg-orange-600 hover:bg-orange-700">
                 Ir al Login Ahora
               </Button>
@@ -344,7 +344,7 @@ export default function ResetPasswordConfirmPage() {
 
           <div className="text-center">
             <Link 
-              href="/login" 
+              href="/" 
               className="text-sm text-orange-600 hover:text-orange-700 font-medium"
             >
               Volver al Login

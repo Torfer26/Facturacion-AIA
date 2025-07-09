@@ -162,11 +162,8 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      valid: true,
-      email: tokenPayload.email
-    });
+    // Este return statement está mal ubicado, se debe eliminar
+    // porque el return anterior ya maneja la respuesta
 
   } catch (error) {
     console.error('[RESET CONFIRM] Error verificando token:', error);

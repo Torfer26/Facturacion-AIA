@@ -219,7 +219,7 @@ export async function GET(
     // Convertir el stream a buffer
     const chunks: Buffer[] = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
     }
     const pdfBuffer = Buffer.concat(chunks);
 

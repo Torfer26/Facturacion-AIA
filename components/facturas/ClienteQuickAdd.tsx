@@ -59,7 +59,7 @@ export function ClienteQuickAdd({ onClienteCreated, trigger }: ClienteQuickAddPr
         id: `temp-${Date.now()}`, // ID temporal
         ...formData,
         fechaAlta: new Date().toISOString(),
-        ultimaFactura: null,
+        ultimaFactura: undefined,
         totalFacturado: 0,
         numeroFacturas: 0,
         createdAt: new Date().toISOString(),

@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getInvoices } from '@/lib/services/airtable'
 import Airtable from 'airtable'
-import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth'
 import { z } from 'zod'
 import { Invoice } from '@/lib/types'
-
-// Helper function to ensure date is current year
-function getNormalizedTimestamp(): string {
-  const now = new Date();
-  return now.toISOString();
-}
+import { getUserFromRequest, createUserFilter, addUserToRecordData, canAccessRecord, logDataAccess } from '@/lib/utils/userFilters'
+import { 
+  getNormalizedTimestamp, 
+  validateAirtableEnv, 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse,
+  checkAuth
+} from '@/lib/utils/api-helpers'
 
 // Airtable configuration
 function getAirtableBase() {
@@ -23,100 +26,46 @@ function getAirtableBase() {
   return base(tableName);
 }
 
-// Check authentication helper
-async function checkAuth(request: Request) {
-  // Get token from cookies (same as middleware)
-  const cookieHeader = request.headers.get('cookie') || '';
-  
-  const cookies = Object.fromEntries(
-    cookieHeader.split(';').map(cookie => {
-      const [name, value] = cookie.trim().split('=');
-      return [name, value];
-    })
-  );
-  
-  const token = cookies['auth-token'];
-  
-  if (!token) {
-    return { authenticated: false, error: 'No authentication token provided' };
-  }
-  
-  // Try to verify token with both systems
-  let user = await verifyToken(token); // V1 system
-  
-  if (!user) {
-    // Try V2 system (JWT)
-    try {
-      const jwtUser = await verifyToken(token);
-      if (jwtUser) {
-        user = {
-          id: jwtUser.id,
-          email: jwtUser.email,
-          name: jwtUser.name || jwtUser.email, // Use name or email as fallback
-          role: jwtUser.role.toLowerCase()
-        };
-      }
-    } catch (error) {
-      // JWT verification failed, user remains null
-    }
-  }
-  
-  if (!user) {
-    return { authenticated: false, error: 'Invalid authentication token' };
-  }
-  
-  return { authenticated: true, user };
-}
+
 
 export async function GET(request: Request) {
   try {
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
-      return NextResponse.json({
-        success: false,
-        error: auth.error
-      }, { status: 401 });
+      return createAuthErrorResponse(auth.error);
     }
+
+    // Convertir el usuario autenticado al formato UserInfo
+    const user = {
+      id: auth.user!.id,
+      email: auth.user!.email,
+      rol: (auth.user!.role?.toUpperCase() || 'USER') as 'ADMIN' | 'USER' | 'VIEWER'
+    };
+
+    logDataAccess(user, 'GET', 'facturas-recibidas');
     
     // Verificar que todas las variables de entorno necesarias estén definidas
-    const requiredEnvVars = {
-      AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
-      AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
-      AIRTABLE_API_URL: process.env.AIRTABLE_API_URL
+    const envValidation = validateAirtableEnv();
+    if (!envValidation.valid) {
+      return envValidation.response!; // Non-null assertion since valid=false means response is always set
     }
 
-    const missingVars = Object.entries(requiredEnvVars)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key)
-
-    if (missingVars.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: `Missing required environment variables: ${missingVars.join(', ')}`,
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 })
-    }
-
-    const airtableInvoices = await getInvoices()
+    // Aplicar filtros según el rol del usuario
+    const userFilter = createUserFilter(user);
+    const airtableInvoices = await getInvoices(userFilter.filterByFormula)
     
     // No need for transformation since getInvoices already returns Invoice objects
     const invoices = airtableInvoices;
 
-    return NextResponse.json({
-      success: true,
-      invoices,
-      metadata: {
-        count: invoices.length,
-        timestamp: getNormalizedTimestamp()
-      }
-    })
+    return createSuccessResponse(
+      { invoices },
+      { count: invoices.length }
+    );
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido al obtener las facturas',
-      timestamp: getNormalizedTimestamp()
-    }, { status: 500 })
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido al obtener las facturas'
+    );
   }
 }
 
@@ -144,11 +93,17 @@ export async function POST(request: Request) {
     // Check authentication
     const auth = await checkAuth(request);
     if (!auth.authenticated) {
-      return NextResponse.json({
-        success: false,
-        error: auth.error
-      }, { status: 401 });
+      return createAuthErrorResponse(auth.error);
     }
+
+    // Convertir el usuario autenticado al formato UserInfo
+    const user = {
+      id: auth.user!.id,
+      email: auth.user!.email,
+      rol: (auth.user!.role?.toUpperCase() || 'USER') as 'ADMIN' | 'USER' | 'VIEWER'
+    };
+
+    logDataAccess(user, 'CREATE', 'facturas-recibidas');
     
     // Verify required environment variables
     const requiredEnvVars = {
@@ -161,11 +116,7 @@ export async function POST(request: Request) {
       .map(([key]) => key)
 
     if (missingVars.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: `Missing required environment variables: ${missingVars.join(', ')}`,
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 })
+      return createServerErrorResponse(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
 
     // Get the data from the request
@@ -173,11 +124,7 @@ export async function POST(request: Request) {
     // Validate the request data
     const validationResult = InvoiceCreationSchema.safeParse(data);
     if (!validationResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid invoice data',
-        details: validationResult.error.flatten()
-      }, { status: 400 });
+      return createServerErrorResponse('Invalid invoice data: ' + JSON.stringify(validationResult.error.flatten()));
     }
     
     try {
@@ -187,8 +134,8 @@ export async function POST(request: Request) {
       // Generate invoice number if not provided
       const invoiceNumber = data.facturaID || new Date().toISOString().split('T')[0];
       
-      // Prepare data for Airtable - transforming from IssuedInvoice format to Invoice format
-      const invoiceData = {
+      // Prepare base data for Airtable - transforming from IssuedInvoice format to Invoice format
+      const baseInvoiceData = {
         'InvoiceDate': data.creationDate,
         'Customer Name': data.nombrecliente,
         'Supplier VAT Identification Number': data.CIFcliente,
@@ -201,6 +148,9 @@ export async function POST(request: Request) {
         'Invoice description': data.productofactura?.[0]?.descripcion || 'Services',
         'URL Google Drive': ''
       };
+
+      // Añadir información del usuario automáticamente
+      const invoiceData = addUserToRecordData(baseInvoiceData, user);
       
       // Log the data being sent to Airtable
       // Create the record in Airtable
@@ -212,8 +162,7 @@ export async function POST(request: Request) {
         // This allows the UI to function even if Airtable integration has issues
         if (process.env.NODE_ENV !== 'production') {
           const timestamp = getNormalizedTimestamp();
-          return NextResponse.json({
-            success: true,
+          return createSuccessResponse({
             invoice: {
               id: 'mock-' + Date.now(),
               invoiceDate: data.creationDate,
@@ -231,9 +180,8 @@ export async function POST(request: Request) {
               driveUrl: '',
               createdAt: timestamp,
               updatedAt: timestamp
-            } as Invoice,
-            timestamp: timestamp
-          });
+            } as Invoice
+          }, { timestamp });
         }
         
         // If in production, rethrow the error
@@ -271,24 +219,17 @@ export async function POST(request: Request) {
       };
       
       // Return the created invoice
-      const timestamp = getNormalizedTimestamp();
-      return NextResponse.json({
-        success: true,
-        invoice,
-        timestamp
+      return createSuccessResponse({
+        invoice
       });
     } catch (error) {
-      return NextResponse.json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Error creando la factura',
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 });
+      return createServerErrorResponse(
+        error instanceof Error ? error.message : 'Error creando la factura'
+      );
     }
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error procesando la solicitud',
-      timestamp: getNormalizedTimestamp()
-    }, { status: 500 });
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error procesando la solicitud'
+    );
   }
 }

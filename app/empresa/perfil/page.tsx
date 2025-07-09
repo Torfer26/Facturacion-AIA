@@ -33,8 +33,8 @@ export default function EmpresaPerfilPage() {
       swift: '',
       titular: ''
     },
-    tipoSociedad: 'limitada' as const,
-    periodoLiquidacion: 'trimestral' as const,
+    tipoSociedad: 'limitada' as 'anonima' | 'limitada' | 'cooperativa' | 'autonomo' | 'otros',
+    periodoLiquidacion: 'trimestral' as 'mensual' | 'trimestral',
     regimenEspecial: '',
     codigoActividad: '',
     epigrafeIAE: '',
@@ -67,11 +67,11 @@ export default function EmpresaPerfilPage() {
         telefono: empresa.telefono || '',
         email: empresa.email || '',
         web: empresa.web || '',
-        datosBancarios: empresa.datosBancarios || {
-          banco: '',
-          iban: '',
-          swift: '',
-          titular: ''
+        datosBancarios: {
+          banco: empresa.datosBancarios?.banco || '',
+          iban: empresa.datosBancarios?.iban || '',
+          swift: empresa.datosBancarios?.swift || '',
+          titular: empresa.datosBancarios?.titular || ''
         },
         tipoSociedad: empresa.tipoSociedad || 'limitada',
         periodoLiquidacion: empresa.periodoLiquidacion || 'trimestral',

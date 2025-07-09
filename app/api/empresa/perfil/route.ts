@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { EmpresaProfile } from '@/lib/types/empresa';
+import { 
+  createServerErrorResponse,
+  createSuccessResponse,
+  getNormalizedTimestamp 
+} from '@/lib/utils/api-helpers';
 
 // Configuración de Airtable para empresa
 function getAirtableBase() {
@@ -31,8 +36,7 @@ export async function GET() {
     
     if (allRecords.length === 0) {
       console.log('❌ No hay registros en la tabla');
-      return NextResponse.json({
-        success: true,
+      return createSuccessResponse({
         empresa: null,
         message: 'No hay perfil de empresa configurado'
       });
@@ -51,8 +55,7 @@ export async function GET() {
 
     if (!recordWithData) {
       console.log('❌ No se encontró ningún registro con datos');
-      return NextResponse.json({
-        success: true,
+      return createSuccessResponse({
         empresa: null,
         message: 'No hay datos de empresa configurados'
       });
@@ -107,17 +110,15 @@ export async function GET() {
       ciudad: empresa.ciudad
     });
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       empresa
     });
     
   } catch (error) {
     console.error('❌ Error obteniendo perfil empresa:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
@@ -188,8 +189,7 @@ export async function POST(request: Request) {
         console.log('✅ Nuevo registro creado exitosamente');
       }
 
-      return NextResponse.json({
-        success: true,
+      return createSuccessResponse({
         empresa: {
           id: result.id,
           nombre: data.nombre,
@@ -234,19 +234,17 @@ export async function POST(request: Request) {
       console.error('❌ Error en update/create:', updateError);
       
       // Si falla, devolver un error más informativo
-      return NextResponse.json({
-        success: false,
-        error: 'No se pudieron crear los campos en Airtable. Necesitas crear manualmente las columnas en tu tabla.',
-        details: updateError instanceof Error ? updateError.message : 'Error desconocido',
-        solution: 'Ve a tu tabla ConfiguracionEmpresa en Airtable y crea las columnas: Nombre, CIF, Direccion, Ciudad, Telefono, Email'
-      }, { status: 500 });
+      return createServerErrorResponse(
+        'No se pudieron crear los campos en Airtable. Necesitas crear manualmente las columnas en tu tabla. ' +
+        'Ve a tu tabla ConfiguracionEmpresa en Airtable y crea las columnas: Nombre, CIF, Direccion, Ciudad, Telefono, Email. ' +
+        'Detalles: ' + (updateError instanceof Error ? updateError.message : 'Error desconocido')
+      );
     }
     
   } catch (error) {
     console.error('❌ Error general guardando perfil empresa:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 } 

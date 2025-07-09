@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getClientes, createCliente } from '@/lib/services/clientesService'
 import { z } from 'zod'
-
-// Helper function to ensure date is current year
-function getNormalizedTimestamp(): string {
-  const now = new Date();
-  return now.toISOString();
-}
+import { getUserFromRequest, createUserFilter, logDataAccess } from '@/lib/utils/userFilters'
+import { 
+  getNormalizedTimestamp, 
+  validateAirtableEnv, 
+  createAuthErrorResponse,
+  createServerErrorResponse,
+  createSuccessResponse 
+} from '@/lib/utils/api-helpers'
 
 // Validation schema for cliente creation
 const ClienteCreationSchema = z.object({
@@ -33,67 +35,50 @@ const ClienteCreationSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    // TODO: Add authentication check here when ready
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return createAuthErrorResponse('Usuario no autenticado');
+    }
+
+    logDataAccess(user, 'GET', 'clientes');
     
     // Verify required environment variables
-    const requiredEnvVars = {
-      AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
-      AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
-      AIRTABLE_API_URL: process.env.AIRTABLE_API_URL
+    const envValidation = validateAirtableEnv();
+    if (!envValidation.valid) {
+      return envValidation.response!; // Non-null assertion since valid=false means response is always set
     }
 
-    const missingVars = Object.entries(requiredEnvVars)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key)
-
-    if (missingVars.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: `Missing required environment variables: ${missingVars.join(', ')}`,
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 })
-    }
-
-    const clientes = await getClientes()
+    // Aplicar filtros según el rol del usuario
+    const userFilter = createUserFilter(user);
+    const clientes = await getClientes(userFilter.filterByFormula)
     
-    return NextResponse.json({
-      success: true,
-      clientes,
-      metadata: {
-        count: clientes.length,
-        timestamp: getNormalizedTimestamp()
-      }
-    })
+    return createSuccessResponse(
+      { clientes },
+      { count: clientes.length }
+    );
   } catch (error) {
     console.error('Error in GET /api/clientes:', error)
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido al obtener los clientes',
-      timestamp: getNormalizedTimestamp()
-    }, { status: 500 })
+    return createServerErrorResponse(
+      error instanceof Error ? error.message : 'Error desconocido al obtener los clientes'
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    // TODO: Add authentication check here when ready
-    
-    // Verify required environment variables
-    const requiredEnvVars = {
-      AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
-      AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
+    // Extraer información del usuario
+    const user = getUserFromRequest(request);
+    if (!user) {
+      return createAuthErrorResponse('Usuario no autenticado');
     }
 
-    const missingVars = Object.entries(requiredEnvVars)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key)
-
-    if (missingVars.length > 0) {
-      return NextResponse.json({
-        success: false,
-        error: `Missing required environment variables: ${missingVars.join(', ')}`,
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 })
+    logDataAccess(user, 'CREATE', 'clientes');
+    
+    // Verify required environment variables
+    const envValidation = validateAirtableEnv();
+    if (!envValidation.valid) {
+      return envValidation.response!; // Non-null assertion since valid=false means response is always set
     }
 
     // Get the data from the request
@@ -110,21 +95,15 @@ export async function POST(request: Request) {
     }
     
     try {
-      // Create the cliente in Airtable
-      const cliente = await createCliente(validationResult.data);
+      // Create the cliente in Airtable with user information
+      const cliente = await createCliente(validationResult.data, user);
       
       // Return the created cliente
-      return NextResponse.json({
-        success: true,
-        cliente,
-        timestamp: getNormalizedTimestamp()
-      });
+      return createSuccessResponse({ cliente });
     } catch (error) {
-      return NextResponse.json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Error creando el cliente',
-        timestamp: getNormalizedTimestamp()
-      }, { status: 500 });
+      return createServerErrorResponse(
+        error instanceof Error ? error.message : 'Error creando el cliente'
+      );
     }
   } catch (error) {
     console.error('Error in POST /api/clientes:', error)
