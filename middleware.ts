@@ -12,7 +12,9 @@ const publicPaths = [
   '/api/auth/logout',
   '/api/auth/check',
   '/api/auth/reset-password',
+  '/api/auth/reset-password/confirm',
   '/auth/reset-password',
+  '/api/webhooks/invoice-processed',  // Webhook de n8n para facturas procesadas
   '/_next',
   '/favicon.ico',
   '/.well-known',
